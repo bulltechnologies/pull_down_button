@@ -59,10 +59,14 @@ class MenuConfig extends InheritedModel<_MenuConfigAspect> {
       _of(context, _MenuConfigAspect.contentSize).contentSizeCategory;
 
   /// Used to determine if the menu has any items with a leading widget.
-  static bool menuHasLeading(List<Widget> items) =>
-      items.whereType<PullDownMenuItem>().any(
-        (element) => element.selected != null,
-      );
+  static bool menuHasLeading(List<Widget> items) {
+    for (final item in items) {
+      if (item is PullDownMenuItem && item.selected != null) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   @override
   bool updateShouldNotify(MenuConfig oldWidget) =>

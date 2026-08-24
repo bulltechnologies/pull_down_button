@@ -2,4 +2,4 @@ include: package:yet_another_lint/package.yaml
 
 linter:
   rules:
-    - prefer_constructors_over_static_methods: false
+    prefer_constructors_over_static_methods: false

@@ -50,21 +50,42 @@ class RoutePullDownMenu extends StatelessWidget {
     final PullDownMenuRouteTheme theme =
         MenuConfig.ambientThemeOf(context).routeTheme;
 
-    final BoxShadow shadow = theme.shadow!;
-    final shadowTween = DecorationTween(
+    final List<BoxShadow> shadows =
+        theme.resolvedBoxShadow ??
+        (theme.shadow != null ? [theme.shadow!] : const <BoxShadow>[]);
+
+    final DecorationTween shadowTween = DecorationTween(
       begin: BoxDecoration(
         boxShadow: [
-          BoxShadow(
-            color: shadow.color.withValues(alpha: 0),
-            blurRadius: shadow.blurRadius,
-            spreadRadius: shadow.spreadRadius,
-          ),
+          for (final BoxShadow s in shadows)
+            BoxShadow(
+              color: s.color.withValues(alpha: 0),
+              blurRadius: s.blurRadius,
+              spreadRadius: s.spreadRadius,
+              offset: s.offset,
+            ),
         ],
       ),
-      end: BoxDecoration(boxShadow: [shadow]),
+      end: BoxDecoration(boxShadow: shadows),
     );
 
-    final clampedAnimation = ClampedAnimation(animation);
+    final ClampedAnimation clampedAnimation = ClampedAnimation(animation);
+
+    final BoxConstraints constraints =
+        theme.constraints ??
+        BoxConstraints(
+          minWidth:
+              theme.minWidth ??
+              (isInAccessibilityMode
+                  ? theme.accessibilityWidth!
+                  : theme.width!),
+          maxWidth:
+              theme.maxWidth ??
+              (isInAccessibilityMode
+                  ? theme.accessibilityWidth!
+                  : theme.width!),
+          maxHeight: theme.maxHeight ?? double.infinity,
+        );
 
     return ScaleTransition(
       scale: animation,
@@ -79,17 +100,19 @@ class RoutePullDownMenu extends StatelessWidget {
             backgroundColor: theme.backgroundColor!,
             borderRadius: theme.borderRadius!,
             borderClipper: theme.borderClipper!,
+            backdropBlurSigma: theme.backdropBlurSigma!,
+            showBackdropFilter: theme.showBackdropFilter ?? true,
+            border: theme.border,
+            padding: theme.padding,
+            margin: theme.margin,
+            clipBehavior: theme.clipBehavior ?? Clip.antiAlias,
+            containerBuilder: theme.containerBuilder,
             child: FadeTransition(
               opacity: clampedAnimation,
               child: AnimatedMenuContainer(
-                constraints: BoxConstraints.tightFor(
-                  width:
-                      isInAccessibilityMode
-                          ? theme.accessibilityWidth
-                          : theme.width,
-                ),
+                constraints: constraints,
                 child: SizeTransition(
-                  axisAlignment: -1,
+                  alignment: Alignment.topCenter,
                   sizeFactor: clampedAnimation,
                   child: MenuBody(
                     scrollController: scrollController,

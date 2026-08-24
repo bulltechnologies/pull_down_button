@@ -15,6 +15,13 @@ class MenuDecoration extends StatelessWidget {
     required this.backgroundColor,
     required this.borderRadius,
     required this.borderClipper,
+    required this.backdropBlurSigma,
+    this.showBackdropFilter = true,
+    this.border,
+    this.padding,
+    this.margin,
+    this.clipBehavior = Clip.antiAlias,
+    this.containerBuilder,
   });
 
   /// A menu content widget.
@@ -29,21 +36,71 @@ class MenuDecoration extends StatelessWidget {
   /// The border radius clipper of the pull-down menu.
   final PullDownMenuRouteBorderClipper borderClipper;
 
+  /// Backdrop filter blur sigma for translucent backgrounds.
+  final double backdropBlurSigma;
+
+  /// Whether to show the backdrop filter blur.
+  final bool showBackdropFilter;
+
+  /// Optional border to draw around the menu container.
+  final BoxBorder? border;
+
+  /// Optional inner padding for the menu container.
+  final EdgeInsetsGeometry? padding;
+
+  /// Optional outer margin for the menu container.
+  final EdgeInsetsGeometry? margin;
+
+  /// Clipping behavior for the container.
+  final Clip clipBehavior;
+
+  /// Optional builder callback to morph or wrap the menu container.
+  final PullDownMenuContainerBuilder? containerBuilder;
+
   @override
   Widget build(BuildContext context) {
-    Widget box = ColoredBox(
+    Widget box = child;
+
+    if (padding != null) {
+      box = Padding(padding: padding!, child: box);
+    }
+
+    box = ColoredBox(
       color: backgroundColor,
-      child: child,
+      child: box,
     );
 
-    if (BlurUtils.useBackdropFilter(backgroundColor)) {
-      box = BackdropFilter(
-        filter: BlurUtils.menuBlur(context),
+    if (showBackdropFilter && BlurUtils.useBackdropFilter(backgroundColor)) {
+      box = RepaintBoundary(
+        child: BackdropFilter(
+          filter: BlurUtils.menuBlur(context, sigma: backdropBlurSigma),
+          child: box,
+        ),
+      );
+    }
+
+    if (border != null) {
+      box = DecoratedBox(
+        decoration: BoxDecoration(
+          border: border,
+          borderRadius: borderRadius,
+        ),
+        position: DecorationPosition.foreground,
         child: box,
       );
     }
 
-    return borderClipper(borderRadius, box);
+    Widget clipped = borderClipper(borderRadius, box);
+
+    if (margin != null) {
+      clipped = Padding(padding: margin!, child: clipped);
+    }
+
+    if (containerBuilder != null) {
+      clipped = containerBuilder!(context, clipped);
+    }
+
+    return clipped;
   }
 }
 
@@ -69,28 +126,32 @@ class MenuBody extends StatefulWidget {
 }
 
 class _MenuBodyState extends State<MenuBody> {
-  late final ScrollController _effectiveScrollController;
+  late final ScrollController _scrollController;
+  late final bool _ownsScrollController;
 
   @override
   void initState() {
     super.initState();
-    _effectiveScrollController = widget.scrollController ?? ScrollController();
+    _ownsScrollController = widget.scrollController == null;
+    _scrollController = widget.scrollController ?? ScrollController();
   }
 
   @override
   void dispose() {
-    _effectiveScrollController.dispose();
+    if (_ownsScrollController) {
+      _scrollController.dispose();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final child = CupertinoScrollbar(
-      controller: _effectiveScrollController,
+    final Widget child = CupertinoScrollbar(
+      controller: _scrollController,
       child: SingleChildScrollView(
         primary: false,
         clipBehavior: Clip.none,
-        controller: _effectiveScrollController,
+        controller: _scrollController,
         child: ListBody(
           children: PullDownMenuSeparator.wrapVerticalList(widget.items),
         ),

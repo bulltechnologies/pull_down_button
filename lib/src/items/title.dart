@@ -24,12 +24,29 @@ class PullDownMenuTitle extends StatelessWidget {
   const PullDownMenuTitle({
     super.key,
     required this.title,
+    this.subtitle,
+    this.leading,
+    this.trailing,
     this.alignment = PullDownMenuTitleAlignment.start,
     this.titleStyle,
+    this.subtitleStyle,
+    this.padding,
+    this.margin,
+    this.titleSubtitleGap,
+    this.titleTheme,
   });
 
   /// Typically a [Text] widget with short one/two words content.
   final Widget title;
+
+  /// Optional subtitle widget for the title entry.
+  final Widget? subtitle;
+
+  /// Optional leading widget for the title entry.
+  final Widget? leading;
+
+  /// Optional trailing widget for the title entry.
+  final Widget? trailing;
 
   /// The alignment of [title].
   ///
@@ -38,15 +55,29 @@ class PullDownMenuTitle extends StatelessWidget {
 
   /// The text style of the title.
   ///
-  ///
   /// If this property is null, then the value from the ambient
   /// [PullDownMenuTitleTheme] is used.
   final TextStyle? titleStyle;
 
+  /// The text style of the subtitle.
+  final TextStyle? subtitleStyle;
+
+  /// Custom padding for this title entry.
+  final EdgeInsetsDirectional? padding;
+
+  /// Custom margin for this title entry.
+  final EdgeInsetsGeometry? margin;
+
+  /// Gap between title and subtitle.
+  final double? titleSubtitleGap;
+
+  /// An optional per-title theme override.
+  final PullDownMenuTitleTheme? titleTheme;
+
   @override
   Widget build(BuildContext context) {
     final PullDownMenuTitleTheme theme =
-        MenuConfig.ambientThemeOf(context).titleTheme;
+        titleTheme ?? MenuConfig.ambientThemeOf(context).titleTheme;
     final bool hasLeading = MenuConfig.hasLeadingOf(context);
     final ContentSizeCategory contentSize = MenuConfig.contentSizeCategoryOf(
       context,
@@ -54,28 +85,78 @@ class PullDownMenuTitle extends StatelessWidget {
 
     final TextStyle resolvedStyle = theme.style!.merge(titleStyle);
     final double minHeight = ElementSize.title.resolve(contentSize);
-    final isAlignedToStart = alignment == PullDownMenuTitleAlignment.start;
-    final bool isAlignedToLeading = hasLeading && isAlignedToStart;
+    final bool isAlignedToStart =
+        alignment == PullDownMenuTitleAlignment.start;
+    final bool isAlignedToLeading =
+        hasLeading && isAlignedToStart && leading == null;
+    final PullDownMenuItemTheme itemTheme =
+        MenuConfig.ambientThemeOf(context).itemTheme;
 
     Widget resolvedChild = title;
-    if (isAlignedToLeading) {
-      resolvedChild = Row(
+
+    if (subtitle != null) {
+      final TextStyle resolvedSubtitleStyle =
+          itemTheme.subtitleStyle!.merge(subtitleStyle);
+      final double gap = titleSubtitleGap ?? theme.titleSubtitleGap ?? 0;
+
+      resolvedChild = Column(
+        crossAxisAlignment:
+            isAlignedToStart
+                ? CrossAxisAlignment.start
+                : CrossAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const LeadingWidgetBox(),
-          Expanded(child: resolvedChild),
+          resolvedChild,
+          if (gap > 0) SizedBox(height: gap),
+          DefaultTextStyle(
+            style: resolvedSubtitleStyle,
+            child: subtitle!,
+          ),
         ],
       );
     }
 
+    if (leading != null || trailing != null || isAlignedToLeading) {
+      resolvedChild = Row(
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          if (isAlignedToLeading)
+            LeadingWidgetBox(
+              width: itemTheme.leadingWidth!,
+              endSpacing: itemTheme.leadingSpacing!,
+            )
+          else if (leading != null) ...[
+            leading!,
+            const SizedBox(width: 8),
+          ],
+          Expanded(child: resolvedChild),
+          if (trailing != null) ...[
+            const SizedBox(width: 8),
+            trailing!,
+          ],
+        ],
+      );
+    }
+
+    final EdgeInsetsDirectional titlePadding =
+        padding ??
+        theme.padding ??
+        EdgeInsetsDirectional.only(
+          start:
+              isAlignedToLeading
+                  ? theme.startPaddingWithLeading!
+                  : theme.startPadding!,
+          top: theme.verticalPadding!,
+          bottom: theme.verticalPadding!,
+          end: theme.endPadding!,
+        );
+
+    final EdgeInsetsGeometry? titleMargin = margin ?? theme.margin;
+
     return AnimatedMenuContainer(
       constraints: BoxConstraints(minHeight: minHeight),
-      padding: EdgeInsetsDirectional.only(
-        // Use title with menu item's padding so it's all nicely aligned.
-        start: isAlignedToLeading ? 9 : 16,
-        top: 8,
-        bottom: 8,
-        end: 16,
-      ),
+      padding: titlePadding,
+      margin: titleMargin,
       alignment:
           isAlignedToStart
               ? AlignmentDirectional.centerStart

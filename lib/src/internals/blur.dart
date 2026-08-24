@@ -23,29 +23,60 @@ abstract final class BlurUtils {
   /// * Apple Design Resources Sketch and Figma [libraries](https://developer.apple.com/design/resources/)
   static const double _kBlurSigma = 30;
 
-  /// Blur used by [ImageFilter.compose] as an outer filter.
-  static final _menuBlur = ImageFilter.blur(
-    sigmaX: _kBlurSigma,
-    sigmaY: _kBlurSigma,
+  /// Default backdrop blur sigma used by [PullDownMenuRouteTheme].
+  static const double defaultBlurSigma = _kBlurSigma;
+
+  static ImageFilter _blurFilter(double sigma) => ImageFilter.blur(
+    sigmaX: sigma,
+    sigmaY: sigma,
   );
 
+  static final _composedBlurCache = <_BlurCacheKey, ImageFilter>{};
+
   /// Blur used by [BackdropFilter] if [BlurUtils.useBackdropFilter] is `true`.
-  static ImageFilter menuBlur(BuildContext context) {
+  static ImageFilter menuBlur(
+    BuildContext context, {
+    double sigma = _kBlurSigma,
+  }) {
     // Reasoning https://github.com/flutter/flutter/pull/121829#issuecomment-1494714917.
     if (kIsWeb) {
-      return _menuBlur;
+      return _blurFilter(sigma);
     }
 
     final Brightness brightness = menuBrightnessOf(context);
+    final key = _BlurCacheKey(brightness: brightness, sigma: sigma);
 
-    return ImageFilter.compose(
-      inner: switch (brightness) {
-        Brightness.dark => _darkSaturationMatrix,
-        Brightness.light => _lightSaturationMatrix,
-      },
-      outer: _menuBlur,
+    return _composedBlurCache.putIfAbsent(
+      key,
+      () => ImageFilter.compose(
+        inner: switch (brightness) {
+          Brightness.dark => _darkSaturationMatrix,
+          Brightness.light => _lightSaturationMatrix,
+        },
+        outer: _blurFilter(sigma),
+      ),
     );
   }
+}
+
+@immutable
+class _BlurCacheKey {
+  const _BlurCacheKey({
+    required this.brightness,
+    required this.sigma,
+  });
+
+  final Brightness brightness;
+  final double sigma;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _BlurCacheKey &&
+      other.brightness == brightness &&
+      other.sigma == sigma;
+
+  @override
+  int get hashCode => Object.hash(brightness, sigma);
 }
 
 // Taken from [CupertinoPopupSurface]

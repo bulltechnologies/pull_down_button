@@ -13,19 +13,10 @@ import '/src/theme/item_theme.dart';
 import '/src/theme/route_theme.dart';
 import 'item.dart';
 
-const double _kHeaderVerticalPadding = 10;
-const double _kHeaderStartPadding = 16;
 const double _kHeaderEndPadding = 12;
 
-const _padding = EdgeInsetsDirectional.only(
-  start: _kHeaderStartPadding,
-  end: _kHeaderEndPadding,
-  top: _kHeaderVerticalPadding,
-  bottom: _kHeaderVerticalPadding,
-);
-
 /// The default size of a leading widget in [PullDownMenuHeader].
-const _kLeadingSize = BoxConstraints.tightFor(
+const BoxConstraints _kLeadingSize = BoxConstraints.tightFor(
   height: kMinInteractiveDimensionCupertino,
   width: kMinInteractiveDimensionCupertino,
 );
@@ -60,10 +51,22 @@ class PullDownMenuHeader extends StatelessWidget {
     this.leading,
     this.leadingBuilder,
     required this.title,
+    this.titleWidget,
     this.subtitle,
+    this.subtitleWidget,
+    this.trailing,
     this.itemTheme,
     this.icon,
     this.iconWidget,
+    this.iconColor,
+    this.iconSize,
+    this.backgroundColor,
+    this.margin,
+    this.border,
+    this.padding,
+    this.itemBorderRadius,
+    this.mouseCursor,
+    this.titleSubtitleGap,
   }) : assert(
          icon == null || iconWidget == null,
          'Please provide either icon or iconWidget',
@@ -112,8 +115,17 @@ class PullDownMenuHeader extends StatelessWidget {
   /// Title of this [PullDownMenuHeader].
   final String title;
 
+  /// Optional custom title widget.
+  final Widget? titleWidget;
+
   /// Subtitle of this [PullDownMenuHeader].
   final String? subtitle;
+
+  /// Optional custom subtitle widget.
+  final Widget? subtitleWidget;
+
+  /// Optional trailing widget.
+  final Widget? trailing;
 
   /// Theme of this [PullDownMenuHeader].
   ///
@@ -136,29 +148,118 @@ class PullDownMenuHeader extends StatelessWidget {
   /// If used in [PullDownMenuActionsRow], either this or [icon] is required.
   final Widget? iconWidget;
 
+  /// Custom icon color for this header.
+  final Color? iconColor;
+
+  /// Custom icon size for this header.
+  final double? iconSize;
+
+  /// Default idle background color for this header container.
+  final Color? backgroundColor;
+
+  /// Outer margin surrounding this header inside the menu body.
+  final EdgeInsetsGeometry? margin;
+
+  /// Border around this header container.
+  final BoxBorder? border;
+
+  /// Custom padding for this header item.
+  final EdgeInsetsDirectional? padding;
+
+  /// Custom border radius for this header item.
+  final BorderRadius? itemBorderRadius;
+
+  /// Custom mouse cursor for this header item.
+  final MouseCursor? mouseCursor;
+
+  /// Gap between title and subtitle.
+  final double? titleSubtitleGap;
+
+  PullDownMenuItemTheme _resolveTheme(BuildContext context) {
+    final PullDownMenuItemTheme ambient =
+        MenuConfig.ambientThemeOf(context).itemTheme;
+
+    if (itemTheme == null) {
+      return ambient;
+    }
+
+    return ambient.copyWith(
+      destructiveColor: itemTheme!.destructiveColor,
+      checkmark: itemTheme!.checkmark,
+      textStyle: itemTheme!.textStyle,
+      subtitleStyle: itemTheme!.subtitleStyle,
+      iconActionTextStyle: itemTheme!.iconActionTextStyle,
+      trailingTextStyle: itemTheme!.trailingTextStyle,
+      trailingColor: itemTheme!.trailingColor,
+      backgroundColor: itemTheme!.backgroundColor,
+      onHoverBackgroundColor: itemTheme!.onHoverBackgroundColor,
+      onPressedBackgroundColor: itemTheme!.onPressedBackgroundColor,
+      onHoverTextColor: itemTheme!.onHoverTextColor,
+      onPressedTextColor: itemTheme!.onPressedTextColor,
+      titleColor: itemTheme!.titleColor,
+      subtitleColor: itemTheme!.subtitleColor,
+      iconColor: itemTheme!.iconColor,
+      iconBackgroundColor: itemTheme!.iconBackgroundColor,
+      iconBorderRadius: itemTheme!.iconBorderRadius,
+      iconPadding: itemTheme!.iconPadding,
+      iconSize: itemTheme!.iconSize,
+      iconAlignment: itemTheme!.iconAlignment,
+      disabledOpacity: itemTheme!.disabledOpacity,
+      itemBorderRadius: itemTheme!.itemBorderRadius,
+      border: itemTheme!.border,
+      margin: itemTheme!.margin,
+      padding: itemTheme!.padding,
+      headerPadding: itemTheme!.headerPadding,
+      actionsRowPadding: itemTheme!.actionsRowPadding,
+      titleSubtitleGap: itemTheme!.titleSubtitleGap,
+      iconSpacing: itemTheme!.iconSpacing,
+      leadingWidth: itemTheme!.leadingWidth,
+      leadingSpacing: itemTheme!.leadingSpacing,
+      checkmarkSize: itemTheme!.checkmarkSize,
+      showLeading: itemTheme!.showLeading,
+      mouseCursor: itemTheme!.mouseCursor,
+      minHeight: itemTheme!.minHeight,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final PullDownMenuItemTheme theme =
-        MenuConfig.ambientThemeOf(context).itemTheme;
+    final PullDownMenuItemTheme theme = _resolveTheme(context);
+
+    final Widget resolvedLeading =
+        leadingBuilder?.call(context, _kLeadingSize) ??
+        (leading != null ? _Leading(child: leading!) : const SizedBox.shrink());
 
     return MergeSemantics(
       child: Semantics(
         button: onTap != null,
         child: MenuActionButton(
           onTap: onTap != null ? () => tapHandler(context, onTap) : null,
+          backgroundColor: backgroundColor ?? theme.backgroundColor,
           hoverColor: theme.onHoverBackgroundColor!,
           pressedColor: theme.onPressedBackgroundColor!,
+          borderRadius:
+              itemBorderRadius ?? theme.itemBorderRadius ?? BorderRadius.zero,
+          border: border ?? theme.border,
+          margin: margin ?? theme.margin,
+          mouseCursor: mouseCursor ?? theme.mouseCursor,
           child: _HeaderBody(
-            leading:
-                leadingBuilder?.call(context, _kLeadingSize) ??
-                _Leading(child: leading!),
+            theme: theme,
+            leading: resolvedLeading,
             title: title,
+            titleWidget: titleWidget,
             titleStyle: theme.textStyle!,
             subtitle: subtitle,
+            subtitleWidget: subtitleWidget,
             subtitleStyle: theme.subtitleStyle!,
+            titleSubtitleGap: titleSubtitleGap ?? theme.titleSubtitleGap,
+            trailing: trailing,
             icon: icon,
             iconWidget: iconWidget,
+            iconColor: iconColor,
+            iconSize: iconSize,
             onHoverTextColor: theme.onHoverTextColor!,
+            padding: padding ?? theme.headerPadding!,
           ),
         ),
       ),
@@ -171,24 +272,40 @@ class PullDownMenuHeader extends StatelessWidget {
 class _HeaderBody extends StatelessWidget {
   /// Creates [_HeaderBody].
   const _HeaderBody({
+    required this.theme,
     required this.leading,
     required this.title,
+    this.titleWidget,
     required this.titleStyle,
     required this.subtitle,
+    this.subtitleWidget,
     required this.subtitleStyle,
+    this.titleSubtitleGap,
+    this.trailing,
     required this.icon,
     required this.iconWidget,
+    this.iconColor,
+    this.iconSize,
     required this.onHoverTextColor,
+    required this.padding,
   });
 
+  final PullDownMenuItemTheme theme;
   final Widget leading;
   final String title;
+  final Widget? titleWidget;
   final TextStyle titleStyle;
   final String? subtitle;
+  final Widget? subtitleWidget;
   final TextStyle subtitleStyle;
+  final double? titleSubtitleGap;
+  final Widget? trailing;
   final IconData? icon;
   final Widget? iconWidget;
+  final Color? iconColor;
+  final double? iconSize;
   final Color onHoverTextColor;
+  final EdgeInsetsDirectional padding;
 
   @override
   Widget build(BuildContext context) {
@@ -200,24 +317,24 @@ class _HeaderBody extends StatelessWidget {
 
     final bool isInAccessibilityMode =
         ContentSizeCategory.isInAccessibilityMode(context);
-    final maxLines = isInAccessibilityMode ? 3 : 2;
+    final int maxLines = isInAccessibilityMode ? 3 : 2;
 
-    Widget body = Text(
-      title,
-      style: titleStyle.copyWith(
-        color: isHovered ? onHoverTextColor : null,
-      ),
-      textAlign: TextAlign.start,
-      overflow: TextOverflow.ellipsis,
-      softWrap: false,
-      maxLines: maxLines,
-    );
+    Widget body =
+        titleWidget ??
+        Text(
+          title,
+          style: titleStyle.copyWith(
+            color: isHovered ? onHoverTextColor : null,
+          ),
+          textAlign: TextAlign.start,
+          overflow: TextOverflow.ellipsis,
+          softWrap: false,
+          maxLines: maxLines,
+        );
 
-    if (subtitle != null) {
-      body = Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          body,
+    if (subtitleWidget != null || subtitle != null) {
+      final Widget subtitleContent =
+          subtitleWidget ??
           Text(
             subtitle!,
             style: subtitleStyle,
@@ -225,7 +342,16 @@ class _HeaderBody extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             softWrap: false,
             maxLines: maxLines,
-          ),
+          );
+
+      final double gap = titleSubtitleGap ?? theme.titleSubtitleGap ?? 0;
+
+      body = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          body,
+          if (gap > 0) SizedBox(height: gap),
+          subtitleContent,
         ],
       );
     }
@@ -240,9 +366,16 @@ class _HeaderBody extends StatelessWidget {
           child: leading,
         ),
         Expanded(child: body),
+        if (trailing != null) ...[
+          const SizedBox(width: 8),
+          DefaultTextStyle(
+            style: theme.trailingTextStyle ?? subtitleStyle,
+            child: trailing!,
+          ),
+        ],
         if (hasIcon)
           Padding(
-            padding: const EdgeInsetsDirectional.only(start: 8),
+            padding: EdgeInsetsDirectional.only(start: theme.iconSpacing!),
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: (isHovered ? onHoverTextColor : subtitleStyle.color!)
@@ -250,7 +383,10 @@ class _HeaderBody extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: IconActionBox(
-                color: isHovered ? onHoverTextColor : titleStyle.color!,
+                color:
+                    iconColor ??
+                    (isHovered ? onHoverTextColor : titleStyle.color!),
+                size: iconSize,
                 child: iconWidget ?? Icon(icon),
               ),
             ),
@@ -261,7 +397,7 @@ class _HeaderBody extends StatelessWidget {
     return AnimatedMenuContainer(
       alignment: AlignmentDirectional.centerStart,
       constraints: BoxConstraints(minHeight: minHeight),
-      padding: _padding,
+      padding: padding,
       child: body,
     );
   }
@@ -283,13 +419,17 @@ class _Leading extends StatelessWidget {
     final PullDownMenuRouteTheme theme =
         MenuConfig.ambientThemeOf(context).routeTheme;
 
-    final resolvedChild = ConstrainedBox(
+    final Color shadowColor =
+        theme.resolvedBoxShadow?.firstOrNull?.color ??
+        const Color.fromRGBO(0, 0, 0, 0.2);
+
+    final Widget resolvedChild = ConstrainedBox(
       constraints: _kLeadingSize,
       child: DecoratedBox(
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: theme.shadow!.color,
+              color: shadowColor,
               blurRadius: 2,
               offset: const Offset(0, 1),
             ),

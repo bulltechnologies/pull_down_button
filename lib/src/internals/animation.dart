@@ -8,10 +8,13 @@ import 'package:flutter/animation.dart';
 ///
 /// All of the values were eyeballed using the iOS 16 Simulator.
 abstract final class AnimationUtils {
-  /// Pull-down menu open / close animation duration.
+  /// Pull-down menu open duration.
   ///
   /// The value was deducted using comparison with native variant.
-  static const kMenuDuration = Duration(milliseconds: 300);
+  static const Duration kMenuDuration = Duration(milliseconds: 300);
+
+  /// Pull-down menu close duration.
+  static const Duration kMenuReverseDuration = Duration(milliseconds: 300);
 
   /// Pull-down menu animation curve on size change (ex. on text scale change).
   ///
@@ -28,7 +31,9 @@ abstract final class AnimationUtils {
   static const Curve kCurveReverse = Curves.easeIn;
 
   /// A curve tween for [PullDownMenuRouteTheme.shadow].
-  static final shadowTween = CurveTween(curve: const Interval(1 / 3, 1));
+  static final Animatable<double> shadowTween = CurveTween(
+    curve: const Interval(1 / 3, 1),
+  );
 }
 
 /// An animation that clamps its parent value between `0` and `1`.

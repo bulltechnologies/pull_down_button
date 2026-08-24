@@ -1,9 +1,5 @@
 part of 'route.dart';
 
-/// Minimum space from horizontal screen edges for the pull-down menu to be
-/// rendered from.
-const double _kMenuScreenPadding = 8;
-
 /// Positioning and size of the menu on the screen.
 @immutable
 class _PopupMenuRouteLayout extends SingleChildLayoutDelegate {
@@ -13,6 +9,7 @@ class _PopupMenuRouteLayout extends SingleChildLayoutDelegate {
     required this.buttonRect,
     required this.menuPosition,
     required this.menuOffset,
+    required this.screenPadding,
   });
 
   final EdgeInsets padding;
@@ -20,6 +17,7 @@ class _PopupMenuRouteLayout extends SingleChildLayoutDelegate {
   final Rect buttonRect;
   final PullDownMenuPosition menuPosition;
   final double menuOffset;
+  final double screenPadding;
 
   @override
   BoxConstraints getConstraintsForChild(BoxConstraints constraints) {
@@ -41,7 +39,7 @@ class _PopupMenuRouteLayout extends SingleChildLayoutDelegate {
     return BoxConstraints.loose(
       Size(biggest.width, height),
     ).deflate(
-      const EdgeInsets.symmetric(horizontal: _kMenuScreenPadding),
+      EdgeInsets.symmetric(horizontal: screenPadding),
     );
   }
 
@@ -69,7 +67,13 @@ class _PopupMenuRouteLayout extends SingleChildLayoutDelegate {
       originCenter,
     );
 
-    final double dx = _PositionUtils.fitX(x, subScreen, childWidth, padding);
+    final double dx = _PositionUtils.fitX(
+      x,
+      subScreen,
+      childWidth,
+      padding,
+      screenPadding,
+    );
     final double dy = _PositionUtils.fitY(
       buttonRect,
       subScreen,
@@ -86,7 +90,8 @@ class _PopupMenuRouteLayout extends SingleChildLayoutDelegate {
       padding != oldDelegate.padding ||
       !setEquals(avoidBounds, oldDelegate.avoidBounds) ||
       buttonRect != oldDelegate.buttonRect ||
-      menuPosition != oldDelegate.menuPosition;
+      menuPosition != oldDelegate.menuPosition ||
+      screenPadding != oldDelegate.screenPadding;
 }
 
 /// A set of utils to help calculating menu's position on screen.
@@ -145,11 +150,10 @@ abstract class _PositionUtils {
     Rect screen,
     double childWidth,
     EdgeInsets padding,
+    double screenPadding,
   ) {
-    final double leftSafeArea =
-        screen.left + _kMenuScreenPadding + padding.left;
-    final double rightSafeArea =
-        screen.right - _kMenuScreenPadding - padding.right;
+    final double leftSafeArea = screen.left + screenPadding + padding.left;
+    final double rightSafeArea = screen.right - screenPadding - padding.right;
 
     if (wantedX < leftSafeArea) {
       return leftSafeArea;

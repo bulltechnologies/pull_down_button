@@ -65,9 +65,42 @@ class PullDownMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final PullDownButtonTheme ambientOf = PullDownButtonTheme.ambientOf(
-      context,
-    );
+    PullDownButtonTheme ambientOf = PullDownButtonTheme.ambientOf(context);
+
+    if (routeTheme != null) {
+      ambientOf = ambientOf.copyWith(
+        routeTheme: ambientOf.routeTheme.copyWith(
+          backgroundColor: routeTheme!.backgroundColor,
+          borderRadius: routeTheme!.borderRadius,
+          borderClipper: routeTheme!.borderClipper,
+          shadow: routeTheme!.shadow,
+          boxShadow: routeTheme!.boxShadow,
+          border: routeTheme!.border,
+          width: routeTheme!.width,
+          accessibilityWidth: routeTheme!.accessibilityWidth,
+          minWidth: routeTheme!.minWidth,
+          maxWidth: routeTheme!.maxWidth,
+          maxHeight: routeTheme!.maxHeight,
+          constraints: routeTheme!.constraints,
+          padding: routeTheme!.padding,
+          margin: routeTheme!.margin,
+          clipBehavior: routeTheme!.clipBehavior,
+          containerBuilder: routeTheme!.containerBuilder,
+          barrierColor: routeTheme!.barrierColor,
+          barrierDismissible: routeTheme!.barrierDismissible,
+          barrierLabel: routeTheme!.barrierLabel,
+          backdropBlurSigma: routeTheme!.backdropBlurSigma,
+          showBackdropFilter: routeTheme!.showBackdropFilter,
+          openDuration: routeTheme!.openDuration,
+          closeDuration: routeTheme!.closeDuration,
+          sizeChangeDuration: routeTheme!.sizeChangeDuration,
+          openCurve: routeTheme!.openCurve,
+          closeCurve: routeTheme!.closeCurve,
+          menuScreenPadding: routeTheme!.menuScreenPadding,
+        ),
+      );
+    }
+
     final PullDownMenuRouteTheme theme = ambientOf.routeTheme;
 
     final bool hasLeading = MenuConfig.menuHasLeading(items);
@@ -75,25 +108,47 @@ class PullDownMenu extends StatelessWidget {
     final bool isInAccessibilityMode =
         ContentSizeCategory.isInAccessibilityMode(context);
 
+    final List<BoxShadow> shadows =
+        theme.resolvedBoxShadow ??
+        (theme.shadow != null ? [theme.shadow!] : const <BoxShadow>[]);
+
+    final BoxConstraints constraints =
+        theme.constraints ??
+        BoxConstraints(
+          minWidth:
+              theme.minWidth ??
+              (isInAccessibilityMode
+                  ? theme.accessibilityWidth!
+                  : theme.width!),
+          maxWidth:
+              theme.maxWidth ??
+              (isInAccessibilityMode
+                  ? theme.accessibilityWidth!
+                  : theme.width!),
+          maxHeight: theme.maxHeight ?? double.infinity,
+        );
+
     return MenuConfig(
       hasLeading: hasLeading,
       ambientTheme: ambientOf,
       contentSizeCategory: ContentSizeCategory.of(context),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          boxShadow: [theme.shadow!],
+          boxShadow: shadows,
         ),
         child: MenuDecoration(
           backgroundColor: theme.backgroundColor!,
           borderRadius: theme.borderRadius!,
           borderClipper: theme.borderClipper!,
+          backdropBlurSigma: theme.backdropBlurSigma!,
+          showBackdropFilter: theme.showBackdropFilter ?? true,
+          border: theme.border,
+          padding: theme.padding,
+          margin: theme.margin,
+          clipBehavior: theme.clipBehavior ?? Clip.antiAlias,
+          containerBuilder: theme.containerBuilder,
           child: AnimatedMenuContainer(
-            constraints: BoxConstraints.tightFor(
-              width:
-                  isInAccessibilityMode
-                      ? theme.accessibilityWidth
-                      : theme.width,
-            ),
+            constraints: constraints,
             child: SwipeRegion(
               child: MenuBody(
                 scrollController: scrollController,

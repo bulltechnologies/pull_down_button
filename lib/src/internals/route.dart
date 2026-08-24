@@ -21,7 +21,7 @@ class PullDownMenuRoute<VoidCallback> extends PopupRoute<VoidCallback> {
   /// Creates [PullDownMenuRoute].
   PullDownMenuRoute({
     required this.items,
-    required this.barrierLabel,
+    required String barrierLabel,
     required this.routeTheme,
     required this.buttonRect,
     required this.menuPosition,
@@ -32,7 +32,7 @@ class PullDownMenuRoute<VoidCallback> extends PopupRoute<VoidCallback> {
     required this.menuOffset,
     required this.scrollController,
     required super.settings,
-  });
+  }) : _barrierLabel = barrierLabel;
 
   /// Items to show in the [RoutePullDownMenu] created by this route.
   final List<Widget> items;
@@ -72,24 +72,31 @@ class PullDownMenuRoute<VoidCallback> extends PopupRoute<VoidCallback> {
   /// [items] in the menu.
   final ScrollController? scrollController;
 
+  final String _barrierLabel;
+
   @override
-  final String barrierLabel;
+  String? get barrierLabel => routeTheme?.barrierLabel ?? _barrierLabel;
 
   @override
   Animation<double> createAnimation() => CurvedAnimation(
     parent: super.createAnimation(),
-    curve: AnimationUtils.kCurve,
-    reverseCurve: AnimationUtils.kCurveReverse,
+    curve: routeTheme?.openCurve ?? AnimationUtils.kCurve,
+    reverseCurve: routeTheme?.closeCurve ?? AnimationUtils.kCurveReverse,
   );
 
   @override
-  Duration get transitionDuration => AnimationUtils.kMenuDuration;
+  Duration get transitionDuration =>
+      routeTheme?.openDuration ?? AnimationUtils.kMenuDuration;
 
   @override
-  bool get barrierDismissible => true;
+  Duration get reverseTransitionDuration =>
+      routeTheme?.closeDuration ?? AnimationUtils.kMenuReverseDuration;
 
   @override
-  Color? get barrierColor => null;
+  bool get barrierDismissible => routeTheme?.barrierDismissible ?? true;
+
+  @override
+  Color? get barrierColor => routeTheme?.barrierColor;
 
   @override
   Widget buildPage(
@@ -97,11 +104,13 @@ class PullDownMenuRoute<VoidCallback> extends PopupRoute<VoidCallback> {
     Animation<double> animation,
     Animation<double> secondaryAnimation,
   ) {
-    final Iterable<Widget> orderedItems = switch (itemsOrder) {
+    final List<Widget> orderedItems = switch (itemsOrder) {
       PullDownMenuItemsOrder.downwards => items,
-      PullDownMenuItemsOrder.upwards => items.reversed,
+      PullDownMenuItemsOrder.upwards => items.reversed.toList(growable: false),
       PullDownMenuItemsOrder.automatic =>
-        alignment.y == -1 ? items : items.reversed,
+        alignment.y == -1
+            ? items
+            : items.reversed.toList(growable: false),
     };
 
     return MenuConfig(
@@ -110,7 +119,7 @@ class PullDownMenuRoute<VoidCallback> extends PopupRoute<VoidCallback> {
       contentSizeCategory: ContentSizeCategory.of(context),
       child: RoutePullDownMenu(
         scrollController: scrollController,
-        items: orderedItems.toList(),
+        items: orderedItems,
         routeTheme: routeTheme,
         animation: animation,
         alignment: alignment,
@@ -130,6 +139,10 @@ class PullDownMenuRoute<VoidCallback> extends PopupRoute<VoidCallback> {
     final Set<Rect> avoidBounds =
         DisplayFeatureSubScreen.avoidBounds(mediaQuery).toSet();
 
+    final double screenPadding =
+        routeTheme?.menuScreenPadding ??
+        PullDownButtonTheme.ambientOf(context).routeTheme.menuScreenPadding!;
+
     return SwipeRegion(
       child: MediaQuery.removePadding(
         context: context,
@@ -144,6 +157,7 @@ class PullDownMenuRoute<VoidCallback> extends PopupRoute<VoidCallback> {
             avoidBounds: avoidBounds,
             menuPosition: menuPosition,
             menuOffset: menuOffset,
+            screenPadding: screenPadding,
           ),
           child: capturedThemes.wrap(child),
         ),
@@ -212,7 +226,7 @@ enum _MenuHorizontalPosition {
     // Allowed threshold of screen side (left / right) for the menu to be opened
     // using "centered" alignment.
     // Based on native comparison with iOS 16 Simulator.
-    const threshold = 0.2744;
+    const double threshold = 0.2744;
 
     final double leftCenteredThreshold = widthCenter * (1 - threshold);
     final double rightCenteredThreshold = widthCenter * threshold + widthCenter;

@@ -12,8 +12,8 @@ import 'continuous_swipe.dart';
 import 'extensions.dart';
 
 /// Default menu gesture detector for applying on-pressed or on-hover colors,
-/// and providing builder method that exposes the `isHovered` state to
-/// descendant widgets.
+/// and providing builder method that exposes the `isHovered` and `isPressed`
+/// state to descendant widgets.
 @immutable
 class MenuActionButton extends StatefulWidget {
   /// Creates [MenuActionButton].
@@ -22,7 +22,12 @@ class MenuActionButton extends StatefulWidget {
     required this.onTap,
     required this.pressedColor,
     required this.hoverColor,
+    this.backgroundColor,
     required this.child,
+    this.borderRadius = BorderRadius.zero,
+    this.border,
+    this.margin,
+    this.mouseCursor,
   });
 
   /// Called when the menu item is tapped.
@@ -34,18 +39,33 @@ class MenuActionButton extends StatefulWidget {
   /// Color of container during a hover event.
   final Color hoverColor;
 
+  /// Default idle color of container when neither hovered nor pressed.
+  final Color? backgroundColor;
+
   /// The widget below this widget in the tree.
   final Widget child;
+
+  /// Border radius of the pressed, hover, and idle container highlight.
+  final BorderRadius borderRadius;
+
+  /// Optional border around the container.
+  final BoxBorder? border;
+
+  /// Optional outer margin around the container.
+  final EdgeInsetsGeometry? margin;
+
+  /// Custom mouse cursor.
+  final MouseCursor? mouseCursor;
 
   @override
   State<MenuActionButton> createState() => _MenuActionButtonState();
 }
 
 class _MenuActionButtonState extends State<MenuActionButton> {
-  var _isPressed = false;
-  var _isHovered = false;
+  bool _isPressed = false;
+  bool _isHovered = false;
 
-  late final enabled = widget.onTap != null;
+  late final bool enabled = widget.onTap != null;
 
   Offset get _currentPosition =>
       context.currentRenderBox.localToGlobal(Offset.zero);
@@ -70,11 +90,13 @@ class _MenuActionButtonState extends State<MenuActionButton> {
         itemSize: _currentSize,
       );
 
-      if (isWithinMenuItem && !_isPressed) {
-        unawaited(HapticFeedback.selectionClick());
-      }
+      if (_isPressed != isWithinMenuItem) {
+        if (isWithinMenuItem) {
+          unawaited(HapticFeedback.selectionClick());
+        }
 
-      setState(() => _isPressed = isWithinMenuItem);
+        setState(() => _isPressed = isWithinMenuItem);
+      }
     }
 
     if (state is SwipeCompleteState && _isPressed) {
@@ -104,7 +126,7 @@ class _MenuActionButtonState extends State<MenuActionButton> {
   }
 
   void onExit(PointerExitEvent _) {
-    if (enabled && _isHovered) {
+    if (_isHovered) {
       setState(() => _isHovered = false);
     }
   }
@@ -116,45 +138,101 @@ class _MenuActionButtonState extends State<MenuActionButton> {
   }
 
   void onTapUp(TapUpDetails _) {
-    if (enabled && _isPressed) {
+    if (_isPressed) {
       setState(() => _isPressed = false);
     }
   }
 
   void onTapCancel() {
-    if (enabled && _isPressed) {
+    if (_isPressed) {
       setState(() => _isPressed = false);
     }
   }
 
   @override
-  Widget build(BuildContext context) => MouseRegion(
-    cursor: enabled && kIsWeb ? SystemMouseCursors.click : MouseCursor.defer,
-    onEnter: onEnter,
-    onExit: onExit,
-    hitTestBehavior: HitTestBehavior.opaque,
-    child: GestureDetector(
-      onTap: onTap,
-      onTapDown: onTapDown,
-      onTapUp: onTapUp,
-      onTapCancel: onTapCancel,
-      behavior: HitTestBehavior.opaque,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color:
-              _isPressed
-                  ? widget.pressedColor
-                  : _isHovered
-                  ? widget.hoverColor
-                  : null,
-        ),
-        child: MenuActionButtonHoverState(
-          isHovered: _isHovered && !_isPressed,
-          child: widget.child,
+  Widget build(BuildContext context) {
+    final MouseCursor effectiveCursor = widget.mouseCursor ??
+        (enabled && kIsWeb ? SystemMouseCursors.click : MouseCursor.defer);
+
+    final Color? effectiveColor = _isPressed
+        ? widget.pressedColor
+        : _isHovered
+        ? widget.hoverColor
+        : widget.backgroundColor;
+
+    Widget result = MouseRegion(
+      cursor: effectiveCursor,
+      onEnter: onEnter,
+      onExit: onExit,
+      hitTestBehavior: HitTestBehavior.opaque,
+      child: GestureDetector(
+        onTap: onTap,
+        onTapDown: onTapDown,
+        onTapUp: onTapUp,
+        onTapCancel: onTapCancel,
+        behavior: HitTestBehavior.opaque,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: effectiveColor,
+            borderRadius: widget.borderRadius,
+            border: widget.border,
+          ),
+          child: MenuActionButtonState(
+            isHovered: _isHovered && !_isPressed,
+            isPressed: _isPressed,
+            child: MenuActionButtonHoverState(
+              isHovered: _isHovered && !_isPressed,
+              child: widget.child,
+            ),
+          ),
         ),
       ),
-    ),
-  );
+    );
+
+    if (widget.margin != null) {
+      result = Padding(
+        padding: widget.margin!,
+        child: result,
+      );
+    }
+
+    return result;
+  }
+}
+
+/// An inherited widget providing full hover and press states for
+/// [MenuActionButton] descendants.
+@immutable
+class MenuActionButtonState extends InheritedWidget {
+  /// Creates [MenuActionButtonState].
+  const MenuActionButtonState({
+    super.key,
+    required this.isHovered,
+    required this.isPressed,
+    required super.child,
+  });
+
+  /// Whether the button is currently hovered.
+  final bool isHovered;
+
+  /// Whether the button is currently pressed.
+  final bool isPressed;
+
+  /// Returns the current [MenuActionButtonState] from the closest ancestor.
+  static MenuActionButtonState? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<MenuActionButtonState>();
+
+  /// Returns whether the closest ancestor [MenuActionButton] is hovered.
+  static bool isHoveredOf(BuildContext context) =>
+      maybeOf(context)?.isHovered ?? false;
+
+  /// Returns whether the closest ancestor [MenuActionButton] is pressed.
+  static bool isPressedOf(BuildContext context) =>
+      maybeOf(context)?.isPressed ?? false;
+
+  @override
+  bool updateShouldNotify(MenuActionButtonState oldWidget) =>
+      isHovered != oldWidget.isHovered || isPressed != oldWidget.isPressed;
 }
 
 /// An inherited widget used to indicate if [PullDownMenuItem] is currently

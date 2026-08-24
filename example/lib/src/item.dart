@@ -25,12 +25,41 @@ class Item extends StatelessWidget {
               ],
             ),
             LabeledExample(
-              label: 'PullDownMenuItem + subtitle',
+              label: 'PullDownMenuItem + subtitle + custom gap',
               items: [
                 PullDownMenuItem(
                   onTap: noAction,
                   title: 'Title',
-                  subtitle: 'Subtitle',
+                  subtitle: 'Subtitle with custom gap',
+                  titleSubtitleGap: 4,
+                ),
+              ],
+            ),
+            LabeledExample(
+              label: 'PullDownMenuItem + leading icon with background & radius',
+              items: [
+                PullDownMenuItem(
+                  onTap: noAction,
+                  title: 'Bookmarks',
+                  icon: CupertinoIcons.bookmark_fill,
+                  iconAlignment: PullDownMenuItemIconAlignment.leading,
+                  iconBackgroundColor: Color(0x20007AFF),
+                  iconBorderRadius: BorderRadius.all(Radius.circular(6)),
+                  iconPadding: EdgeInsets.all(4),
+                ),
+              ],
+            ),
+            LabeledExample(
+              label: 'PullDownMenuItem + highlighted container pill & margin',
+              items: [
+                PullDownMenuItem(
+                  onTap: noAction,
+                  title: 'Follow',
+                  icon: CupertinoIcons.person_badge_plus,
+                  iconAlignment: PullDownMenuItemIconAlignment.leading,
+                  backgroundColor: Color(0x2500C853),
+                  itemBorderRadius: BorderRadius.all(Radius.circular(10)),
+                  margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 ),
               ],
             ),
@@ -65,6 +94,48 @@ class Item extends StatelessWidget {
                     backgroundColor: CupertinoColors.systemCyan,
                     foregroundColor: CupertinoColors.systemBackground,
                     child: Text('A', style: TextStyle(fontSize: 13)),
+                  ),
+                ),
+              ],
+            ),
+            LabeledExample(
+              label: 'PullDownMenuItem + trailing shortcut',
+              items: [
+                PullDownMenuItem(
+                  onTap: noAction,
+                  title: 'Copy',
+                  icon: CupertinoIcons.doc_on_doc,
+                  trailing: Text('⌘C'),
+                ),
+              ],
+            ),
+            LabeledExample(
+              label: 'PullDownMenuItem + leading custom widget',
+              items: [
+                PullDownMenuItem(
+                  onTap: noAction,
+                  title: 'Profile',
+                  leading: Icon(
+                    CupertinoIcons.person_crop_circle,
+                    size: 20,
+                  ),
+                  trailing: Icon(
+                    CupertinoIcons.chevron_forward,
+                    size: 14,
+                  ),
+                ),
+              ],
+            ),
+            LabeledExample(
+              label: 'PullDownMenuItem.custom',
+              items: [
+                PullDownMenuItem.custom(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Volume'),
+                      Icon(CupertinoIcons.speaker_2_fill, size: 18),
+                    ],
                   ),
                 ),
               ],

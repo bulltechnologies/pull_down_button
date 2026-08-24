@@ -15,33 +15,52 @@ class Divider extends StatelessWidget {
         child: ListView(
           children: const [
             LabeledExample(
-              label: 'PullDownMenuDivider',
+              label: 'PullDownMenuDivider (default separator)',
               items: [
                 PullDownMenuItem(
                   onTap: noAction,
-                  title: 'Title',
+                  title: 'First Item',
                   icon: CupertinoIcons.square,
                 ),
                 PullDownMenuItem(
                   onTap: noAction,
-                  title: 'Title',
+                  title: 'Second Item',
                   icon: CupertinoIcons.square,
                 ),
               ],
             ),
             LabeledExample(
-              label: 'PullDownMenuDivider.large',
+              label: 'PullDownMenuDivider (large)',
               items: [
                 PullDownMenuItem(
                   onTap: noAction,
-                  title: 'Title',
-                  icon: CupertinoIcons.square,
+                  title: 'Section 1',
+                  icon: CupertinoIcons.folder,
                 ),
                 PullDownMenuDivider(),
                 PullDownMenuItem(
                   onTap: noAction,
-                  title: 'Title',
-                  icon: CupertinoIcons.square,
+                  title: 'Section 2',
+                  icon: CupertinoIcons.gear,
+                ),
+              ],
+            ),
+            LabeledExample(
+              label: 'PullDownMenuDivider with custom indents',
+              items: [
+                PullDownMenuItem(
+                  onTap: noAction,
+                  title: 'Option A',
+                  icon: CupertinoIcons.star,
+                ),
+                PullDownMenuDivider(
+                  indent: 16,
+                  endIndent: 16,
+                ),
+                PullDownMenuItem(
+                  onTap: noAction,
+                  title: 'Option B',
+                  icon: CupertinoIcons.heart,
                 ),
               ],
             ),

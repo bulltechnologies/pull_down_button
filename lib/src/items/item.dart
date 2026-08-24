@@ -6,7 +6,6 @@ library;
 import 'package:flutter/cupertino.dart';
 
 import '/src/internals/actions_row_size_config.dart';
-import '/src/internals/animation.dart';
 import '/src/internals/brightness.dart';
 import '/src/internals/button.dart';
 import '/src/internals/content_size_category.dart';
@@ -15,24 +14,24 @@ import '/src/internals/item_layout.dart';
 import '/src/internals/menu_config.dart';
 import '/src/internals/route.dart';
 import '/src/theme/item_theme.dart';
+import '/src/theme/theme.dart';
 
-const double _kItemVerticalPadding = 11;
-const double _kItemStartPadding = 16;
-const double _kItemWithLeadingStartPadding = 9;
-const double _kItemEndPadding = 16;
-// This value is present in layout guidelines but is not used anywhere right
-// now. Have it here already to not forget about it later.
-// const double _kItemWithTrailingEndPadding = 6;
+EdgeInsetsDirectional _itemPadding({
+  required PullDownMenuItemTheme theme,
+  required EdgeInsetsDirectional? itemPadding,
+  required bool hasLeading,
+}) {
+  if (itemPadding != null) {
+    return itemPadding;
+  }
 
-EdgeInsetsDirectional _itemPadding({required bool hasLeading}) =>
-    EdgeInsetsDirectional.only(
-      start: hasLeading ? _kItemWithLeadingStartPadding : _kItemStartPadding,
-      end: _kItemEndPadding,
-      top: _kItemVerticalPadding,
-      bottom: _kItemVerticalPadding,
-    );
+  final EdgeInsetsDirectional padding = theme.padding!;
+  if (!hasLeading) {
+    return padding;
+  }
 
-const EdgeInsetsGeometry _kIconActionPadding = EdgeInsetsDirectional.all(10);
+  return padding.copyWith(start: 9);
+}
 
 /// Signature used by [PullDownMenuItem] to resolve how [onTap] callback is
 /// used.
@@ -54,10 +53,49 @@ typedef PullDownMenuItemTapHandler =
       VoidCallback? onTap,
     );
 
+/// State exposed to [PullDownMenuItem.builder].
+@immutable
+class PullDownMenuItemState {
+  /// Creates [PullDownMenuItemState].
+  const PullDownMenuItemState({
+    required this.isHovered,
+    required this.isPressed,
+    required this.enabled,
+    required this.selected,
+    this.onTap,
+  });
+
+  /// Whether the item is currently hovered.
+  final bool isHovered;
+
+  /// Whether the item is currently pressed.
+  final bool isPressed;
+
+  /// Whether the item is enabled.
+  final bool enabled;
+
+  /// Whether the item is selected (for selectable items).
+  final bool? selected;
+
+  /// Callback to execute the item's tap action.
+  final VoidCallback? onTap;
+}
+
+/// Signature used by [PullDownMenuItem.builder] to create a fully customized
+/// item based on its interactive state.
+typedef PullDownMenuItemWidgetBuilder =
+    Widget Function(
+      BuildContext context,
+      PullDownMenuItemState state,
+    );
+
 /// An item in a cupertino style pull-down menu.
 ///
 /// To show a checkmark next to the pull-down menu item (an item with a
 /// selection state), use [PullDownMenuItem.selectable].
+///
+/// To create a fully custom menu item, use [PullDownMenuItem.custom] or
+/// [PullDownMenuItem.builder].
 @immutable
 class PullDownMenuItem extends StatelessWidget {
   /// Creates an item for a pull-down menu.
@@ -69,13 +107,33 @@ class PullDownMenuItem extends StatelessWidget {
     this.tapHandler = defaultTapHandler,
     this.enabled = true,
     required this.title,
+    this.titleWidget,
     this.subtitle,
+    this.subtitleWidget,
     this.itemTheme,
     this.icon,
     this.iconColor,
     this.iconWidget,
+    this.iconSize,
+    this.iconAlignment,
+    this.iconBackgroundColor,
+    this.iconBorderRadius,
+    this.iconPadding,
+    this.trailing,
+    this.leading,
     this.isDestructive = false,
+    this.backgroundColor,
+    this.margin,
+    this.border,
+    this.padding,
+    this.itemBorderRadius,
+    this.mouseCursor,
+    this.alignment,
+    this.titleSubtitleGap,
+    this.showLeading,
   }) : selected = null,
+       builder = null,
+       _isCustom = false,
        assert(
          icon == null || iconWidget == null,
          'Please provide either icon or iconWidget',
@@ -90,17 +148,115 @@ class PullDownMenuItem extends StatelessWidget {
     this.tapHandler = defaultTapHandler,
     this.enabled = true,
     required this.title,
+    this.titleWidget,
     this.subtitle,
+    this.subtitleWidget,
     this.itemTheme,
     this.icon,
     this.iconColor,
     this.iconWidget,
+    this.iconSize,
+    this.iconAlignment,
+    this.iconBackgroundColor,
+    this.iconBorderRadius,
+    this.iconPadding,
+    this.trailing,
+    this.leading,
     this.isDestructive = false,
     this.selected = false,
-  }) : assert(
+    this.backgroundColor,
+    this.margin,
+    this.border,
+    this.padding,
+    this.itemBorderRadius,
+    this.mouseCursor,
+    this.alignment,
+    this.titleSubtitleGap,
+    this.showLeading,
+  }) : builder = null,
+       _isCustom = false,
+       assert(
          icon == null || iconWidget == null,
          'Please provide either icon or iconWidget',
        );
+
+  /// Creates a custom item for a pull-down menu with an arbitrary [child]
+  /// widget.
+  const PullDownMenuItem.custom({
+    super.key,
+    required Widget child,
+    this.onTap,
+    this.tapHandler = defaultTapHandler,
+    this.enabled = true,
+    this.itemTheme,
+    this.backgroundColor,
+    this.margin,
+    this.border,
+    this.padding,
+    this.itemBorderRadius,
+    this.mouseCursor,
+    this.alignment,
+  }) : title = '',
+       titleWidget = child,
+       subtitle = null,
+       subtitleWidget = null,
+       icon = null,
+       iconColor = null,
+       iconWidget = null,
+       iconSize = null,
+       iconAlignment = null,
+       iconBackgroundColor = null,
+       iconBorderRadius = null,
+       iconPadding = null,
+       trailing = null,
+       leading = null,
+       isDestructive = false,
+       selected = null,
+       builder = null,
+       titleSubtitleGap = null,
+       showLeading = null,
+       _isCustom = true;
+
+  /// Creates an item for a pull-down menu built using [builder] which reacts
+  /// to hover and press states.
+  const PullDownMenuItem.builder({
+    super.key,
+    required this.builder,
+    this.onTap,
+    this.tapHandler = defaultTapHandler,
+    this.enabled = true,
+    this.itemTheme,
+    this.backgroundColor,
+    this.margin,
+    this.border,
+    this.padding,
+    this.itemBorderRadius,
+    this.mouseCursor,
+    this.alignment,
+  }) : title = '',
+       titleWidget = null,
+       subtitle = null,
+       subtitleWidget = null,
+       icon = null,
+       iconColor = null,
+       iconWidget = null,
+       iconSize = null,
+       iconAlignment = null,
+       iconBackgroundColor = null,
+       iconBorderRadius = null,
+       iconPadding = null,
+       trailing = null,
+       leading = null,
+       isDestructive = false,
+       selected = null,
+       titleSubtitleGap = null,
+       showLeading = null,
+       _isCustom = true;
+
+  final bool _isCustom;
+
+  /// Builder for dynamic or morphing item states.
+  final PullDownMenuItemWidgetBuilder? builder;
 
   /// The action this item represents.
   ///
@@ -129,8 +285,18 @@ class PullDownMenuItem extends StatelessWidget {
   /// Title of this [PullDownMenuItem].
   final String title;
 
+  /// Optional custom title widget.
+  ///
+  /// If provided, overrides the default [title] [Text] rendering.
+  final Widget? titleWidget;
+
   /// Subtitle of this [PullDownMenuItem].
   final String? subtitle;
+
+  /// Optional custom subtitle widget.
+  ///
+  /// If provided, overrides the default [subtitle] [Text] rendering.
+  final Widget? subtitleWidget;
 
   /// Theme of this [PullDownMenuItem].
   ///
@@ -163,7 +329,31 @@ class PullDownMenuItem extends StatelessWidget {
   /// If used in [PullDownMenuActionsRow], either this or [icon] is required.
   final Widget? iconWidget;
 
-  /// Whether this item represents destructive action;
+  /// Custom icon size for this item.
+  final double? iconSize;
+
+  /// Placement of the icon relative to title.
+  final PullDownMenuItemIconAlignment? iconAlignment;
+
+  /// Background color for the icon's container.
+  final Color? iconBackgroundColor;
+
+  /// Border radius for the icon's container.
+  final BorderRadius? iconBorderRadius;
+
+  /// Padding for the icon's container.
+  final EdgeInsetsGeometry? iconPadding;
+
+  /// Optional trailing widget, such as a keyboard shortcut hint, badge, or
+  /// accessory icon.
+  final Widget? trailing;
+
+  /// Optional custom leading widget.
+  ///
+  /// If provided on a selectable item, it replaces the default checkmark.
+  final Widget? leading;
+
+  /// Whether this item represents destructive action.
   ///
   /// If this is true, then `destructiveColor` from [itemTheme] is used.
   final bool isDestructive;
@@ -182,12 +372,37 @@ class PullDownMenuItem extends StatelessWidget {
   /// are used.
   final bool? selected;
 
+  /// Default idle background color for this item container.
+  final Color? backgroundColor;
+
+  /// Outer margin surrounding this item inside the menu body.
+  final EdgeInsetsGeometry? margin;
+
+  /// Border around this item container.
+  final BoxBorder? border;
+
+  /// Custom padding for this menu item.
+  final EdgeInsetsDirectional? padding;
+
+  /// Custom border radius for this menu item's tap highlight.
+  final BorderRadius? itemBorderRadius;
+
+  /// Custom mouse cursor for this menu item.
+  final MouseCursor? mouseCursor;
+
+  /// Alignment of the item body.
+  final AlignmentGeometry? alignment;
+
+  /// Gap between title and subtitle.
+  final double? titleSubtitleGap;
+
+  /// Whether to show and reserve the leading checkmark column.
+  final bool? showLeading;
+
   /// Default tap handler for [PullDownMenuItem].
   ///
   /// The behavior is to pop the menu and then call the [onTap].
   static void defaultTapHandler(BuildContext context, VoidCallback? onTap) {
-    // If the menu was opened from [PullDownButton] or [showPullDownMenu] - pop
-    // route.
     if (ModalRoute.of(context) is PullDownMenuRoute) {
       Navigator.pop(context, onTap);
     } else {
@@ -208,11 +423,14 @@ class PullDownMenuItem extends StatelessWidget {
     BuildContext context,
     VoidCallback? onTap,
   ) {
-    // If the menu was opened from [PullDownButton] or [showPullDownMenu] - pop
-    // route.
     if (ModalRoute.of(context) is PullDownMenuRoute) {
       Future<void> future() async {
-        await Future<void>.delayed(AnimationUtils.kMenuDuration);
+        final Duration duration =
+            PullDownButtonTheme.ambientOf(
+              context,
+            ).routeTheme.closeDuration!;
+
+        await Future<void>.delayed(duration);
 
         onTap?.call();
       }
@@ -231,67 +449,169 @@ class PullDownMenuItem extends StatelessWidget {
     VoidCallback? onTap,
   ) => onTap?.call();
 
+  PullDownMenuItemTheme _resolveTheme(BuildContext context) {
+    final PullDownMenuItemTheme ambient =
+        MenuConfig.ambientThemeOf(context).itemTheme;
+
+    if (itemTheme == null) {
+      return ambient;
+    }
+
+    return ambient.copyWith(
+      destructiveColor: itemTheme!.destructiveColor,
+      checkmark: itemTheme!.checkmark,
+      textStyle: itemTheme!.textStyle,
+      subtitleStyle: itemTheme!.subtitleStyle,
+      iconActionTextStyle: itemTheme!.iconActionTextStyle,
+      trailingTextStyle: itemTheme!.trailingTextStyle,
+      trailingColor: itemTheme!.trailingColor,
+      backgroundColor: itemTheme!.backgroundColor,
+      onHoverBackgroundColor: itemTheme!.onHoverBackgroundColor,
+      onPressedBackgroundColor: itemTheme!.onPressedBackgroundColor,
+      onHoverTextColor: itemTheme!.onHoverTextColor,
+      onPressedTextColor: itemTheme!.onPressedTextColor,
+      titleColor: itemTheme!.titleColor,
+      subtitleColor: itemTheme!.subtitleColor,
+      iconColor: itemTheme!.iconColor,
+      iconBackgroundColor: itemTheme!.iconBackgroundColor,
+      iconBorderRadius: itemTheme!.iconBorderRadius,
+      iconPadding: itemTheme!.iconPadding,
+      iconSize: itemTheme!.iconSize,
+      iconAlignment: itemTheme!.iconAlignment,
+      disabledOpacity: itemTheme!.disabledOpacity,
+      itemBorderRadius: itemTheme!.itemBorderRadius,
+      border: itemTheme!.border,
+      margin: itemTheme!.margin,
+      padding: itemTheme!.padding,
+      headerPadding: itemTheme!.headerPadding,
+      actionsRowPadding: itemTheme!.actionsRowPadding,
+      titleSubtitleGap: itemTheme!.titleSubtitleGap,
+      iconSpacing: itemTheme!.iconSpacing,
+      leadingWidth: itemTheme!.leadingWidth,
+      leadingSpacing: itemTheme!.leadingSpacing,
+      checkmarkSize: itemTheme!.checkmarkSize,
+      showLeading: itemTheme!.showLeading,
+      mouseCursor: itemTheme!.mouseCursor,
+      minHeight: itemTheme!.minHeight,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ElementSize size = ActionsRowSizeConfig.of(context);
 
-    assert(
-      switch (size) {
-        ElementSize.small ||
-        ElementSize.medium => icon != null || iconWidget != null,
-        ElementSize.large => true,
-        _ => throw UnsupportedError(''),
-      },
-      'Either icon or iconWidget should be provided',
-    );
+    if (!_isCustom) {
+      assert(
+        switch (size) {
+          ElementSize.small ||
+          ElementSize.medium => icon != null || iconWidget != null,
+          ElementSize.large => true,
+          _ => throw UnsupportedError(''),
+        },
+        'Either icon or iconWidget should be provided',
+      );
+    }
 
-    final PullDownMenuItemTheme theme =
-        MenuConfig.ambientThemeOf(context).itemTheme;
-
+    final PullDownMenuItemTheme theme = _resolveTheme(context);
     final bool isEnabled = enabled && onTap != null;
 
-    final Widget child = switch (size) {
-      ElementSize.small => _SmallItem(
-        icon: iconWidget ?? Icon(icon),
-        destructiveColor: theme.destructiveColor!,
-        onHoverColor: theme.onHoverTextColor!,
-        color: iconColor ?? theme.iconActionTextStyle!.color!,
-        enabled: isEnabled,
-        destructive: isDestructive,
-      ),
-      ElementSize.medium => _MediumItem(
-        icon: iconWidget ?? Icon(icon),
-        destructiveColor: theme.destructiveColor!,
-        onHoverColor: theme.onHoverTextColor!,
-        iconColor: iconColor,
-        enabled: isEnabled,
-        destructive: isDestructive,
-        title: title,
-        titleStyle: theme.iconActionTextStyle!,
-      ),
-      ElementSize.large || _ => _LargeItem(
-        icon: icon,
-        iconWidget: iconWidget,
-        destructiveColor: theme.destructiveColor!,
-        onHoverColor: theme.onHoverTextColor!,
-        iconColor: iconColor,
-        enabled: isEnabled,
-        destructive: isDestructive,
-        // Don't do unnecessary checks from inherited widget if [selected] is
-        // not null.
-        leading:
-            selected != null || MenuConfig.hasLeadingOf(context)
-                ? _CheckmarkIcon(
-                  selected: selected ?? false,
-                  checkmark: theme.checkmark!,
-                )
-                : null,
-        title: title,
-        titleStyle: theme.textStyle!,
-        subtitle: subtitle,
-        subtitleStyle: theme.subtitleStyle!,
-      ),
-    };
+    final Widget child;
+
+    if (builder != null) {
+      child = Builder(
+        builder: (context) {
+          final buttonState = MenuActionButtonState.maybeOf(context);
+          final state = PullDownMenuItemState(
+            isHovered: buttonState?.isHovered ?? false,
+            isPressed: buttonState?.isPressed ?? false,
+            enabled: isEnabled,
+            selected: selected,
+            onTap: isEnabled ? () => tapHandler(context, onTap) : null,
+          );
+          final EdgeInsetsDirectional resolvedPadding =
+              padding ?? theme.padding!;
+
+          return AnimatedMenuContainer(
+            alignment: alignment ?? AlignmentDirectional.centerStart,
+            padding: resolvedPadding,
+            child: builder!(context, state),
+          );
+        },
+      );
+    } else {
+      child = switch (size) {
+        ElementSize.small => _SmallItem(
+          icon: iconWidget ?? Icon(icon),
+          iconSize: iconSize ?? theme.iconSize,
+          destructiveColor: theme.destructiveColor!,
+          onHoverColor: theme.onHoverTextColor!,
+          color:
+              iconColor ?? theme.iconColor ?? theme.iconActionTextStyle!.color!,
+          iconBackgroundColor: iconBackgroundColor ?? theme.iconBackgroundColor,
+          iconBorderRadius: iconBorderRadius ?? theme.iconBorderRadius,
+          iconPadding: iconPadding ?? theme.iconPadding,
+          enabled: isEnabled,
+          destructive: isDestructive,
+        ),
+        ElementSize.medium => _MediumItem(
+          icon: iconWidget ?? Icon(icon),
+          iconSize: iconSize ?? theme.iconSize,
+          destructiveColor: theme.destructiveColor!,
+          onHoverColor: theme.onHoverTextColor!,
+          iconColor: iconColor ?? theme.iconColor,
+          iconBackgroundColor: iconBackgroundColor ?? theme.iconBackgroundColor,
+          iconBorderRadius: iconBorderRadius ?? theme.iconBorderRadius,
+          iconPadding: iconPadding ?? theme.iconPadding,
+          enabled: isEnabled,
+          destructive: isDestructive,
+          title: title,
+          titleWidget: titleWidget,
+          titleStyle: theme.iconActionTextStyle!,
+          actionsRowPadding: theme.actionsRowPadding!,
+        ),
+        ElementSize.large || _ => _LargeItem(
+          theme: theme,
+          icon: icon,
+          iconWidget: iconWidget,
+          iconSize: iconSize ?? theme.iconSize,
+          iconAlignment: iconAlignment ?? theme.iconAlignment,
+          iconBackgroundColor: iconBackgroundColor ?? theme.iconBackgroundColor,
+          iconBorderRadius: iconBorderRadius ?? theme.iconBorderRadius,
+          iconPadding: iconPadding ?? theme.iconPadding,
+          destructiveColor: theme.destructiveColor!,
+          onHoverColor: theme.onHoverTextColor!,
+          iconColor: iconColor ?? theme.iconColor,
+          enabled: isEnabled,
+          destructive: isDestructive,
+          leading:
+              leading ??
+              ((showLeading ?? theme.showLeading ?? (selected != null || MenuConfig.hasLeadingOf(context)))
+                  ? _CheckmarkIcon(
+                    selected: selected ?? false,
+                    checkmark: theme.checkmark!,
+                    checkmarkSize: theme.checkmarkSize!,
+                    leadingWidth: theme.leadingWidth!,
+                    leadingSpacing: theme.leadingSpacing!,
+                  )
+                  : null),
+          title: title,
+          titleWidget: titleWidget,
+          titleStyle: theme.textStyle!,
+          subtitle: subtitle,
+          subtitleWidget: subtitleWidget,
+          subtitleStyle: theme.subtitleStyle!,
+          titleSubtitleGap: titleSubtitleGap ?? theme.titleSubtitleGap,
+          trailing: trailing,
+          trailingStyle: theme.trailingTextStyle,
+          itemPadding: padding,
+          alignment: alignment,
+          isCustom: _isCustom,
+        ),
+      };
+    }
+
+    final MouseCursor? effectiveMouseCursor =
+        mouseCursor ?? theme.mouseCursor;
 
     return MergeSemantics(
       child: Semantics(
@@ -300,8 +620,14 @@ class PullDownMenuItem extends StatelessWidget {
         selected: selected,
         child: MenuActionButton(
           onTap: enabled ? () => tapHandler(context, onTap) : null,
+          backgroundColor: backgroundColor ?? theme.backgroundColor,
           pressedColor: theme.onPressedBackgroundColor!,
           hoverColor: theme.onHoverBackgroundColor!,
+          borderRadius:
+              itemBorderRadius ?? theme.itemBorderRadius ?? BorderRadius.zero,
+          border: border ?? theme.border,
+          margin: margin ?? theme.margin,
+          mouseCursor: effectiveMouseCursor,
           child: child,
         ),
       ),
@@ -309,11 +635,15 @@ class PullDownMenuItem extends StatelessWidget {
   }
 }
 
-/// An a [ElementSize.small] menu item.
+/// A [ElementSize.small] menu item.
 @immutable
 class _SmallItem extends StatelessWidget {
   const _SmallItem({
     required this.icon,
+    this.iconSize,
+    this.iconBackgroundColor,
+    this.iconBorderRadius,
+    this.iconPadding,
     required this.destructiveColor,
     required this.onHoverColor,
     required this.color,
@@ -322,6 +652,10 @@ class _SmallItem extends StatelessWidget {
   });
 
   final Widget icon;
+  final double? iconSize;
+  final Color? iconBackgroundColor;
+  final BorderRadius? iconBorderRadius;
+  final EdgeInsetsGeometry? iconPadding;
   final Color destructiveColor;
   final Color onHoverColor;
   final Color color;
@@ -340,43 +674,60 @@ class _SmallItem extends StatelessWidget {
     }
 
     if (!enabled) {
-      resolvedColor = resolvedColor.withValues(
-        alpha: disabledOpacityOf(context),
-      );
+      final double disabledOpacity =
+          MenuConfig.ambientThemeOf(context).itemTheme.disabledOpacity ??
+          disabledOpacityOf(context);
+
+      resolvedColor = resolvedColor.withValues(alpha: disabledOpacity);
     }
 
     return Center(
       child: IconBox(
         color: resolvedColor,
+        size: iconSize,
+        backgroundColor: iconBackgroundColor,
+        borderRadius: iconBorderRadius,
+        padding: iconPadding,
         child: icon,
       ),
     );
   }
 }
 
-/// An a [ElementSize.medium] menu item.
+/// A [ElementSize.medium] menu item.
 @immutable
 class _MediumItem extends StatelessWidget {
-  /// Creates [_MediumItem].
   const _MediumItem({
     required this.icon,
+    this.iconSize,
+    this.iconBackgroundColor,
+    this.iconBorderRadius,
+    this.iconPadding,
     required this.destructiveColor,
     required this.onHoverColor,
     required this.iconColor,
     required this.enabled,
     required this.destructive,
     required this.title,
+    this.titleWidget,
     required this.titleStyle,
+    required this.actionsRowPadding,
   });
 
   final Widget icon;
+  final double? iconSize;
+  final Color? iconBackgroundColor;
+  final BorderRadius? iconBorderRadius;
+  final EdgeInsetsGeometry? iconPadding;
   final Color destructiveColor;
   final Color onHoverColor;
   final Color? iconColor;
   final bool enabled;
   final bool destructive;
   final String title;
+  final Widget? titleWidget;
   final TextStyle titleStyle;
+  final EdgeInsetsGeometry actionsRowPadding;
 
   @override
   Widget build(BuildContext context) {
@@ -393,7 +744,9 @@ class _MediumItem extends StatelessWidget {
     }
 
     if (!enabled) {
-      final double disabledOpacity = disabledOpacityOf(context);
+      final double disabledOpacity =
+          MenuConfig.ambientThemeOf(context).itemTheme.disabledOpacity ??
+          disabledOpacityOf(context);
 
       resolvedColor = resolvedColor.withValues(alpha: disabledOpacity);
       resolvedStyle = resolvedStyle.copyWith(
@@ -401,38 +754,51 @@ class _MediumItem extends StatelessWidget {
       );
     }
 
+    final Widget textWidget =
+        titleWidget ??
+        Text(
+          title,
+          style: resolvedStyle,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          softWrap: false,
+        );
+
     return Padding(
-      padding: _kIconActionPadding,
+      padding: actionsRowPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           IconBox.small(
             color: resolvedColor,
+            size: iconSize,
+            backgroundColor: iconBackgroundColor,
+            borderRadius: iconBorderRadius,
+            padding: iconPadding,
             child: icon,
           ),
           const SizedBox(height: 1),
-          Text(
-            title,
-            style: resolvedStyle,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            softWrap: false,
-          ),
+          textWidget,
         ],
       ),
     );
   }
 }
 
-/// An a [ElementSize.large] menu item.
+/// A [ElementSize.large] menu item.
 @immutable
 class _LargeItem extends StatelessWidget {
-  /// Creates [_LargeItem].
   const _LargeItem({
+    required this.theme,
     required this.icon,
     required this.iconWidget,
+    this.iconSize,
+    this.iconAlignment,
+    this.iconBackgroundColor,
+    this.iconBorderRadius,
+    this.iconPadding,
     required this.destructiveColor,
     required this.onHoverColor,
     required this.iconColor,
@@ -440,13 +806,27 @@ class _LargeItem extends StatelessWidget {
     required this.destructive,
     required this.leading,
     required this.title,
+    this.titleWidget,
     required this.titleStyle,
     required this.subtitle,
+    this.subtitleWidget,
     required this.subtitleStyle,
+    this.titleSubtitleGap,
+    this.trailing,
+    this.trailingStyle,
+    this.itemPadding,
+    this.alignment,
+    this.isCustom = false,
   });
 
+  final PullDownMenuItemTheme theme;
   final IconData? icon;
   final Widget? iconWidget;
+  final double? iconSize;
+  final PullDownMenuItemIconAlignment? iconAlignment;
+  final Color? iconBackgroundColor;
+  final BorderRadius? iconBorderRadius;
+  final EdgeInsetsGeometry? iconPadding;
   final Color destructiveColor;
   final Color onHoverColor;
   final Color? iconColor;
@@ -454,29 +834,52 @@ class _LargeItem extends StatelessWidget {
   final bool destructive;
   final Widget? leading;
   final String title;
+  final Widget? titleWidget;
   final TextStyle titleStyle;
   final String? subtitle;
+  final Widget? subtitleWidget;
   final TextStyle subtitleStyle;
+  final double? titleSubtitleGap;
+  final Widget? trailing;
+  final TextStyle? trailingStyle;
+  final EdgeInsetsDirectional? itemPadding;
+  final AlignmentGeometry? alignment;
+  final bool isCustom;
 
   @override
   Widget build(BuildContext context) {
+    if (isCustom && titleWidget != null) {
+      final EdgeInsetsDirectional resolvedPadding =
+          itemPadding ?? theme.padding!;
+
+      return AnimatedMenuContainer(
+        alignment: alignment ?? AlignmentDirectional.centerStart,
+        padding: resolvedPadding,
+        child: titleWidget!,
+      );
+    }
+
     final bool isHovered = MenuActionButtonHoverState.of(context);
 
     final ContentSizeCategory contentSizeCategory =
         MenuConfig.contentSizeCategoryOf(context);
 
-    final double minHeight =
-        subtitle != null
+    final double calculatedMinHeight =
+        subtitle != null || subtitleWidget != null
             ? ElementSize.extraLarge.resolve(contentSizeCategory)
             : ElementSize.large.resolve(contentSizeCategory);
 
+    final double minHeight = theme.minHeight ?? calculatedMinHeight;
+
     final bool isInAccessibilityMode =
         ContentSizeCategory.isInAccessibilityMode(context);
-    final maxLines = isInAccessibilityMode ? 3 : 2;
+    final int maxLines = isInAccessibilityMode ? 3 : 2;
 
     Color resolvedColor = iconColor ?? titleStyle.color!;
     TextStyle resolvedStyle = titleStyle;
     TextStyle resolvedSubtitleStyle = subtitleStyle;
+    TextStyle? resolvedTrailingStyle = trailingStyle;
+
     if (destructive) {
       resolvedColor = destructiveColor;
       resolvedStyle = resolvedStyle.copyWith(color: destructiveColor);
@@ -486,7 +889,8 @@ class _LargeItem extends StatelessWidget {
     }
 
     if (!enabled) {
-      final double disabledOpacity = disabledOpacityOf(context);
+      final double disabledOpacity =
+          theme.disabledOpacity ?? disabledOpacityOf(context);
 
       resolvedColor = resolvedColor.withValues(alpha: disabledOpacity);
       resolvedStyle = resolvedStyle.copyWith(
@@ -495,23 +899,29 @@ class _LargeItem extends StatelessWidget {
       resolvedSubtitleStyle = resolvedSubtitleStyle.copyWith(
         color: resolvedSubtitleStyle.color!.withValues(alpha: disabledOpacity),
       );
+      if (resolvedTrailingStyle != null) {
+        resolvedTrailingStyle = resolvedTrailingStyle.copyWith(
+          color: resolvedTrailingStyle.color!.withValues(
+            alpha: disabledOpacity,
+          ),
+        );
+      }
     }
 
-    Widget body = Text(
-      title,
-      style: resolvedStyle,
-      textAlign: TextAlign.start,
-      overflow: TextOverflow.ellipsis,
-      softWrap: false,
-      maxLines: maxLines,
-    );
+    Widget body =
+        titleWidget ??
+        Text(
+          title,
+          style: resolvedStyle,
+          textAlign: TextAlign.start,
+          overflow: TextOverflow.ellipsis,
+          softWrap: false,
+          maxLines: maxLines,
+        );
 
-    if (subtitle != null) {
-      body = Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          body,
+    if (subtitleWidget != null || subtitle != null) {
+      final Widget subtitleContent =
+          subtitleWidget ??
           Text(
             subtitle!,
             style: resolvedSubtitleStyle,
@@ -519,7 +929,17 @@ class _LargeItem extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             softWrap: false,
             maxLines: maxLines,
-          ),
+          );
+
+      final double gap = titleSubtitleGap ?? theme.titleSubtitleGap ?? 0;
+
+      body = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          body,
+          if (gap > 0) SizedBox(height: gap),
+          subtitleContent,
         ],
       );
     }
@@ -527,70 +947,112 @@ class _LargeItem extends StatelessWidget {
     final bool hasIcon =
         !isInAccessibilityMode && (icon != null || iconWidget != null);
 
-    final hasLeading = leading != null;
+    final bool hasLeading = leading != null;
+    final PullDownMenuItemIconAlignment alignmentChoice =
+        iconAlignment ??
+        theme.iconAlignment ??
+        PullDownMenuItemIconAlignment.trailing;
+    final bool iconOnLeading =
+        alignmentChoice == PullDownMenuItemIconAlignment.leading;
 
-    if (hasLeading || hasIcon) {
-      body = Row(
-        children: [
-          if (hasLeading)
-            DefaultTextStyle(
-              style: TextStyle(color: resolvedStyle.color),
-              child: leading!,
-            ),
-          Expanded(child: body),
-          if (hasIcon)
-            Padding(
-              padding: const EdgeInsetsDirectional.only(start: 8),
-              child: IconBox(
-                color: resolvedColor,
-                child: iconWidget ?? Icon(icon),
-              ),
-            ),
+    final Widget? menuIcon = hasIcon
+        ? Padding(
+          padding: EdgeInsetsDirectional.only(
+            start: iconOnLeading ? 0 : theme.iconSpacing!,
+            end: iconOnLeading ? theme.iconSpacing! : 0,
+            top: 0,
+            bottom: 0,
+          ),
+          child: IconBox(
+            color: resolvedColor,
+            size: iconSize,
+            backgroundColor: iconBackgroundColor,
+            borderRadius: iconBorderRadius,
+            padding: iconPadding,
+            child: iconWidget ?? Icon(icon),
+          ),
+        )
+        : null;
+
+    final Widget? trailingContent = trailing != null
+        ? DefaultTextStyle(
+          style: resolvedTrailingStyle ?? theme.subtitleStyle!,
+          child: trailing!,
+        )
+        : null;
+
+    body = Row(
+      children: [
+        if (hasLeading)
+          DefaultTextStyle(
+            style: TextStyle(color: resolvedStyle.color),
+            child: leading!,
+          ),
+        if (menuIcon != null && iconOnLeading) menuIcon,
+        Expanded(child: body),
+        if (trailingContent != null) ...[
+          const SizedBox(width: 8),
+          trailingContent,
         ],
-      );
-    }
+        if (menuIcon != null && !iconOnLeading) menuIcon,
+      ],
+    );
+
+    final EdgeInsetsDirectional resolvedPadding = _itemPadding(
+      theme: theme,
+      itemPadding: itemPadding,
+      hasLeading: hasLeading,
+    );
 
     return AnimatedMenuContainer(
-      alignment: AlignmentDirectional.centerStart,
+      alignment: alignment ?? AlignmentDirectional.centerStart,
       constraints: BoxConstraints(minHeight: minHeight),
-      padding: _itemPadding(hasLeading: hasLeading),
+      padding: resolvedPadding,
       child: body,
     );
   }
 }
 
 /// A checkmark widget.
-///
-/// Replicated the [Icon] logic here with required parameters as seen in
-/// iOS 16 Guidelines.
 @immutable
 class _CheckmarkIcon extends StatelessWidget {
-  /// Creates [_CheckmarkIcon].
   const _CheckmarkIcon({
     required this.selected,
     required this.checkmark,
+    required this.checkmarkSize,
+    required this.leadingWidth,
+    required this.leadingSpacing,
   });
 
   final IconData checkmark;
   final bool selected;
+  final double checkmarkSize;
+  final double leadingWidth;
+  final double leadingSpacing;
 
   @override
   Widget build(BuildContext context) {
+    final double height = checkmarkSize * 22 / 17;
+
     if (!selected) {
-      return const LeadingWidgetBox(
-        height: 22,
+      return LeadingWidgetBox(
+        height: height,
+        width: leadingWidth,
+        endSpacing: leadingSpacing,
       );
     }
 
     return LeadingWidgetBox(
-      height: 22,
+      height: height,
+      width: leadingWidth,
+      endSpacing: leadingSpacing,
       child: Center(
         child: Text.rich(
           TextSpan(
             text: String.fromCharCode(checkmark.codePoint),
             style: TextStyle(
-              fontSize: 17,
-              height: 22 / 17,
+              fontSize: checkmarkSize,
+              height: height / checkmarkSize,
               fontWeight: FontWeight.w600,
               fontFamily: checkmark.fontFamily,
               package: checkmark.fontPackage,

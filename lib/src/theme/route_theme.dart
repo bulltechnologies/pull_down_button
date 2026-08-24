@@ -8,6 +8,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
+import '/src/internals/animation.dart';
+import '/src/internals/blur.dart';
 import '/src/internals/content_size_category.dart';
 import '_dynamic_color.dart';
 import 'theme.dart';
@@ -22,6 +24,16 @@ import 'theme.dart';
 typedef PullDownMenuRouteBorderClipper =
     SingleChildRenderObjectWidget Function(
       BorderRadius borderRadius,
+      Widget child,
+    );
+
+/// Signature for the builder callback to morph or wrap the pull-down menu
+/// container with a custom widget or transition.
+///
+/// Used by [PullDownMenuRouteTheme.containerBuilder].
+typedef PullDownMenuContainerBuilder =
+    Widget Function(
+      BuildContext context,
       Widget child,
     );
 
@@ -44,8 +56,29 @@ class PullDownMenuRouteTheme with Diagnosticable {
     this.borderRadius,
     this.borderClipper,
     this.shadow,
+    this.boxShadow,
+    this.border,
     this.width,
     this.accessibilityWidth,
+    this.minWidth,
+    this.maxWidth,
+    this.maxHeight,
+    this.constraints,
+    this.padding,
+    this.margin,
+    this.clipBehavior,
+    this.containerBuilder,
+    this.barrierColor,
+    this.barrierDismissible,
+    this.barrierLabel,
+    this.backdropBlurSigma,
+    this.showBackdropFilter,
+    this.openDuration,
+    this.closeDuration,
+    this.sizeChangeDuration,
+    this.openCurve,
+    this.closeCurve,
+    this.menuScreenPadding,
   });
 
   /// Creates default set of properties used to configure
@@ -91,7 +124,17 @@ class PullDownMenuRouteTheme with Diagnosticable {
   final PullDownMenuRouteBorderClipper? borderClipper;
 
   /// The pull-down menu shadow.
+  ///
+  /// If [boxShadow] is also specified, [boxShadow] takes precedence.
   final BoxShadow? shadow;
+
+  /// A list of shadows cast by the pull-down menu container.
+  ///
+  /// If non-null, overrides [shadow].
+  final List<BoxShadow>? boxShadow;
+
+  /// A border to draw around the pull-down menu container.
+  final BoxBorder? border;
 
   /// The width of pull-down menu.
   final double? width;
@@ -102,6 +145,85 @@ class PullDownMenuRouteTheme with Diagnosticable {
   /// is bigger than [ContentSizeCategory.extraExtraExtraLarge]. At this text
   /// scale factor menu transitions to its bigger size "accessibility" mode.
   final double? accessibilityWidth;
+
+  /// Minimum width of the pull-down menu container.
+  final double? minWidth;
+
+  /// Maximum width of the pull-down menu container.
+  final double? maxWidth;
+
+  /// Maximum height of the pull-down menu container.
+  final double? maxHeight;
+
+  /// Additional constraints to apply to the pull-down menu container.
+  final BoxConstraints? constraints;
+
+  /// Inner padding inside the pull-down menu container surrounding the items.
+  final EdgeInsetsGeometry? padding;
+
+  /// Outer margin around the pull-down menu container.
+  final EdgeInsetsGeometry? margin;
+
+  /// The clipping behavior for the pull-down menu container.
+  final Clip? clipBehavior;
+
+  /// An optional builder to wrap, morph, or transform the menu container into
+  /// custom widgets, inner navigation shells, or animated surfaces.
+  final PullDownMenuContainerBuilder? containerBuilder;
+
+  /// The color of the modal barrier behind the pull-down menu.
+  final Color? barrierColor;
+
+  /// Whether tapping the modal barrier dismisses the pull-down menu.
+  final bool? barrierDismissible;
+
+  /// The accessibility label for the modal barrier.
+  final String? barrierLabel;
+
+  /// Backdrop filter blur strength (sigma) for translucent menu backgrounds.
+  ///
+  /// Defaults to [BlurUtils.defaultBlurSigma].
+  final double? backdropBlurSigma;
+
+  /// Whether to enable backdrop blur filter on translucent menu backgrounds.
+  ///
+  /// If false, backdrop blur is completely disabled regardless of sigma.
+  final bool? showBackdropFilter;
+
+  /// Duration of the menu open animation.
+  ///
+  /// Defaults to [AnimationUtils.kMenuDuration].
+  final Duration? openDuration;
+
+  /// Duration of the menu close animation.
+  ///
+  /// Defaults to [AnimationUtils.kMenuDuration].
+  final Duration? closeDuration;
+
+  /// Duration of layout animations (for example on text scale changes).
+  ///
+  /// Defaults to [openDuration].
+  final Duration? sizeChangeDuration;
+
+  /// Curve of the menu open animation.
+  ///
+  /// Defaults to [AnimationUtils.kCurve].
+  final Curve? openCurve;
+
+  /// Curve of the menu close animation.
+  ///
+  /// Defaults to [AnimationUtils.kCurveReverse].
+  final Curve? closeCurve;
+
+  /// Minimum horizontal padding from screen edges when positioning the menu.
+  ///
+  /// Defaults to `8`.
+  final double? menuScreenPadding;
+
+  /// Resolves the list of box shadows, using [boxShadow] if non-null, or
+  /// wrapping [shadow] in a list if non-null.
+  List<BoxShadow>? get resolvedBoxShadow =>
+      boxShadow ?? (shadow != null ? [shadow!] : null);
 
   /// The helper method to quickly resolve [PullDownMenuRouteTheme]'s width from
   /// [PullDownButtonTheme.routeTheme] or [PullDownMenuRouteTheme.defaults].
@@ -122,16 +244,58 @@ class PullDownMenuRouteTheme with Diagnosticable {
     Color? backgroundColor,
     BorderRadius? borderRadius,
     BoxShadow? shadow,
+    List<BoxShadow>? boxShadow,
+    BoxBorder? border,
     double? width,
     double? accessibilityWidth,
+    double? minWidth,
+    double? maxWidth,
+    double? maxHeight,
+    BoxConstraints? constraints,
+    EdgeInsetsGeometry? padding,
+    EdgeInsetsGeometry? margin,
+    Clip? clipBehavior,
+    PullDownMenuContainerBuilder? containerBuilder,
+    Color? barrierColor,
+    bool? barrierDismissible,
+    String? barrierLabel,
     PullDownMenuRouteBorderClipper? borderClipper,
+    double? backdropBlurSigma,
+    bool? showBackdropFilter,
+    Duration? openDuration,
+    Duration? closeDuration,
+    Duration? sizeChangeDuration,
+    Curve? openCurve,
+    Curve? closeCurve,
+    double? menuScreenPadding,
   }) => PullDownMenuRouteTheme(
     backgroundColor: backgroundColor ?? this.backgroundColor,
     borderRadius: borderRadius ?? this.borderRadius,
     shadow: shadow ?? this.shadow,
+    boxShadow: boxShadow ?? this.boxShadow,
+    border: border ?? this.border,
     width: width ?? this.width,
     accessibilityWidth: accessibilityWidth ?? this.accessibilityWidth,
+    minWidth: minWidth ?? this.minWidth,
+    maxWidth: maxWidth ?? this.maxWidth,
+    maxHeight: maxHeight ?? this.maxHeight,
+    constraints: constraints ?? this.constraints,
+    padding: padding ?? this.padding,
+    margin: margin ?? this.margin,
+    clipBehavior: clipBehavior ?? this.clipBehavior,
+    containerBuilder: containerBuilder ?? this.containerBuilder,
+    barrierColor: barrierColor ?? this.barrierColor,
+    barrierDismissible: barrierDismissible ?? this.barrierDismissible,
+    barrierLabel: barrierLabel ?? this.barrierLabel,
     borderClipper: borderClipper ?? this.borderClipper,
+    backdropBlurSigma: backdropBlurSigma ?? this.backdropBlurSigma,
+    showBackdropFilter: showBackdropFilter ?? this.showBackdropFilter,
+    openDuration: openDuration ?? this.openDuration,
+    closeDuration: closeDuration ?? this.closeDuration,
+    sizeChangeDuration: sizeChangeDuration ?? this.sizeChangeDuration,
+    openCurve: openCurve ?? this.openCurve,
+    closeCurve: closeCurve ?? this.closeCurve,
+    menuScreenPadding: menuScreenPadding ?? this.menuScreenPadding,
   );
 
   /// Linearly interpolate between two themes.
@@ -148,25 +312,81 @@ class PullDownMenuRouteTheme with Diagnosticable {
       backgroundColor: Color.lerp(a?.backgroundColor, b?.backgroundColor, t),
       borderRadius: BorderRadius.lerp(a?.borderRadius, b?.borderRadius, t),
       shadow: BoxShadow.lerp(a?.shadow, b?.shadow, t),
+      boxShadow: BoxShadow.lerpList(a?.boxShadow, b?.boxShadow, t),
+      border: BoxBorder.lerp(a?.border, b?.border, t),
       width: ui.lerpDouble(a?.width, b?.width, t),
       accessibilityWidth: ui.lerpDouble(
         a?.accessibilityWidth,
         b?.accessibilityWidth,
         t,
       ),
+      minWidth: ui.lerpDouble(a?.minWidth, b?.minWidth, t),
+      maxWidth: ui.lerpDouble(a?.maxWidth, b?.maxWidth, t),
+      maxHeight: ui.lerpDouble(a?.maxHeight, b?.maxHeight, t),
+      constraints: BoxConstraints.lerp(a?.constraints, b?.constraints, t),
+      padding: EdgeInsetsGeometry.lerp(a?.padding, b?.padding, t),
+      margin: EdgeInsetsGeometry.lerp(a?.margin, b?.margin, t),
+      clipBehavior: t < 0.5 ? a?.clipBehavior : b?.clipBehavior,
+      containerBuilder: t < 0.5 ? a?.containerBuilder : b?.containerBuilder,
+      barrierColor: Color.lerp(a?.barrierColor, b?.barrierColor, t),
+      barrierDismissible:
+          t < 0.5 ? a?.barrierDismissible : b?.barrierDismissible,
+      barrierLabel: t < 0.5 ? a?.barrierLabel : b?.barrierLabel,
       borderClipper: t < 0.5 ? a?.borderClipper : b?.borderClipper,
+      backdropBlurSigma: ui.lerpDouble(
+        a?.backdropBlurSigma,
+        b?.backdropBlurSigma,
+        t,
+      ),
+      showBackdropFilter:
+          t < 0.5 ? a?.showBackdropFilter : b?.showBackdropFilter,
+      openDuration: _lerpDuration(a?.openDuration, b?.openDuration, t),
+      closeDuration: _lerpDuration(a?.closeDuration, b?.closeDuration, t),
+      sizeChangeDuration: _lerpDuration(
+        a?.sizeChangeDuration,
+        b?.sizeChangeDuration,
+        t,
+      ),
+      openCurve: t < 0.5 ? a?.openCurve : b?.openCurve,
+      closeCurve: t < 0.5 ? a?.closeCurve : b?.closeCurve,
+      menuScreenPadding: ui.lerpDouble(
+        a?.menuScreenPadding,
+        b?.menuScreenPadding,
+        t,
+      ),
     );
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     backgroundColor,
     borderRadius,
     shadow,
+    if (boxShadow != null) Object.hashAll(boxShadow!),
+    border,
     width,
     accessibilityWidth,
+    minWidth,
+    maxWidth,
+    maxHeight,
+    constraints,
+    padding,
+    margin,
+    clipBehavior,
+    containerBuilder,
+    barrierColor,
+    barrierDismissible,
+    barrierLabel,
     borderClipper,
-  );
+    backdropBlurSigma,
+    showBackdropFilter,
+    openDuration,
+    closeDuration,
+    sizeChangeDuration,
+    openCurve,
+    closeCurve,
+    menuScreenPadding,
+  ]);
 
   @override
   bool operator ==(Object other) {
@@ -181,9 +401,30 @@ class PullDownMenuRouteTheme with Diagnosticable {
         other.backgroundColor == backgroundColor &&
         other.borderRadius == borderRadius &&
         other.shadow == shadow &&
+        listEquals(other.boxShadow, boxShadow) &&
+        other.border == border &&
         other.width == width &&
         other.accessibilityWidth == accessibilityWidth &&
-        other.borderClipper == borderClipper;
+        other.minWidth == minWidth &&
+        other.maxWidth == maxWidth &&
+        other.maxHeight == maxHeight &&
+        other.constraints == constraints &&
+        other.padding == padding &&
+        other.margin == margin &&
+        other.clipBehavior == clipBehavior &&
+        other.containerBuilder == containerBuilder &&
+        other.barrierColor == barrierColor &&
+        other.barrierDismissible == barrierDismissible &&
+        other.barrierLabel == barrierLabel &&
+        other.borderClipper == borderClipper &&
+        other.backdropBlurSigma == backdropBlurSigma &&
+        other.showBackdropFilter == showBackdropFilter &&
+        other.openDuration == openDuration &&
+        other.closeDuration == closeDuration &&
+        other.sizeChangeDuration == sizeChangeDuration &&
+        other.openCurve == openCurve &&
+        other.closeCurve == closeCurve &&
+        other.menuScreenPadding == menuScreenPadding;
   }
 
   @override
@@ -196,12 +437,10 @@ class PullDownMenuRouteTheme with Diagnosticable {
       ..add(
         DiagnosticsProperty('borderRadius', borderRadius, defaultValue: null),
       )
-      ..add(
-        DiagnosticsProperty('shadow', shadow, defaultValue: null),
-      )
-      ..add(
-        DoubleProperty('width', width, defaultValue: null),
-      )
+      ..add(DiagnosticsProperty('shadow', shadow, defaultValue: null))
+      ..add(IterableProperty('boxShadow', boxShadow, defaultValue: null))
+      ..add(DiagnosticsProperty('border', border, defaultValue: null))
+      ..add(DoubleProperty('width', width, defaultValue: null))
       ..add(
         DoubleProperty(
           'accessibilityWidth',
@@ -209,10 +448,85 @@ class PullDownMenuRouteTheme with Diagnosticable {
           defaultValue: null,
         ),
       )
+      ..add(DoubleProperty('minWidth', minWidth, defaultValue: null))
+      ..add(DoubleProperty('maxWidth', maxWidth, defaultValue: null))
+      ..add(DoubleProperty('maxHeight', maxHeight, defaultValue: null))
+      ..add(
+        DiagnosticsProperty('constraints', constraints, defaultValue: null),
+      )
+      ..add(DiagnosticsProperty('padding', padding, defaultValue: null))
+      ..add(DiagnosticsProperty('margin', margin, defaultValue: null))
+      ..add(
+        EnumProperty<Clip>('clipBehavior', clipBehavior, defaultValue: null),
+      )
+      ..add(
+        ObjectFlagProperty<PullDownMenuContainerBuilder>.has(
+          'containerBuilder',
+          containerBuilder,
+        ),
+      )
+      ..add(ColorProperty('barrierColor', barrierColor, defaultValue: null))
+      ..add(
+        DiagnosticsProperty(
+          'barrierDismissible',
+          barrierDismissible,
+          defaultValue: null,
+        ),
+      )
+      ..add(StringProperty('barrierLabel', barrierLabel, defaultValue: null))
       ..add(
         DiagnosticsProperty('borderClipper', borderClipper, defaultValue: null),
+      )
+      ..add(
+        DoubleProperty(
+          'backdropBlurSigma',
+          backdropBlurSigma,
+          defaultValue: null,
+        ),
+      )
+      ..add(
+        DiagnosticsProperty(
+          'showBackdropFilter',
+          showBackdropFilter,
+          defaultValue: null,
+        ),
+      )
+      ..add(
+        DiagnosticsProperty('openDuration', openDuration, defaultValue: null),
+      )
+      ..add(
+        DiagnosticsProperty('closeDuration', closeDuration, defaultValue: null),
+      )
+      ..add(
+        DiagnosticsProperty(
+          'sizeChangeDuration',
+          sizeChangeDuration,
+          defaultValue: null,
+        ),
+      )
+      ..add(DiagnosticsProperty('openCurve', openCurve, defaultValue: null))
+      ..add(DiagnosticsProperty('closeCurve', closeCurve, defaultValue: null))
+      ..add(
+        DoubleProperty(
+          'menuScreenPadding',
+          menuScreenPadding,
+          defaultValue: null,
+        ),
       );
   }
+}
+
+Duration? _lerpDuration(Duration? a, Duration? b, double t) {
+  if (a == null && b == null) {
+    return null;
+  }
+  return Duration(
+    microseconds: ui.lerpDouble(
+      (a ?? b)!.inMicroseconds.toDouble(),
+      (b ?? a)!.inMicroseconds.toDouble(),
+      t,
+    )!.round(),
+  );
 }
 
 /// A set of default values for [PullDownMenuRouteTheme].
@@ -251,4 +565,28 @@ class _Defaults extends PullDownMenuRouteTheme {
 
   @override
   Color get backgroundColor => kBackgroundColor.resolveFrom(context);
+
+  @override
+  double get backdropBlurSigma => BlurUtils.defaultBlurSigma;
+
+  @override
+  bool get showBackdropFilter => true;
+
+  @override
+  Duration get openDuration => AnimationUtils.kMenuDuration;
+
+  @override
+  Duration get closeDuration => AnimationUtils.kMenuDuration;
+
+  @override
+  Duration get sizeChangeDuration => AnimationUtils.kMenuDuration;
+
+  @override
+  Curve get openCurve => AnimationUtils.kCurve;
+
+  @override
+  Curve get closeCurve => AnimationUtils.kCurveReverse;
+
+  @override
+  double get menuScreenPadding => 8;
 }

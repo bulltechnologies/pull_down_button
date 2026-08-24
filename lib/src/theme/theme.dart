@@ -224,15 +224,35 @@ PullDownMenuDividerTheme _resolveDivider(
 ) => defaults.copyWith(
   dividerColor: ambient.dividerColor,
   largeDividerColor: ambient.largeDividerColor,
+  color: ambient.color,
+  separatorThickness: ambient.separatorThickness,
+  dividerThickness: ambient.dividerThickness,
+  separatorHeight: ambient.separatorHeight,
+  dividerHeight: ambient.dividerHeight,
+  indent: ambient.indent,
+  endIndent: ambient.endIndent,
+  margin: ambient.margin,
 );
 
 /// Resolves [PullDownMenuTitleTheme] with current [ambient] title theme.
 PullDownMenuTitleTheme _resolveTitle(
   PullDownMenuTitleTheme defaults,
   PullDownMenuTitleTheme ambient,
-) => defaults.copyWith(
-  style: defaults.style!.merge(ambient.style),
-);
+) {
+  final TextStyle style = defaults.style!.merge(ambient.style);
+
+  return defaults.copyWith(
+    style: style.copyWith(color: ambient.color ?? style.color),
+    color: ambient.color,
+    padding: ambient.padding,
+    margin: ambient.margin,
+    startPaddingWithLeading: ambient.startPaddingWithLeading,
+    startPadding: ambient.startPadding,
+    verticalPadding: ambient.verticalPadding,
+    endPadding: ambient.endPadding,
+    titleSubtitleGap: ambient.titleSubtitleGap,
+  );
+}
 
 /// Resolves [PullDownMenuRouteTheme] with current [ambient] route theme.
 PullDownMenuRouteTheme _resolveRoute(
@@ -243,22 +263,84 @@ PullDownMenuRouteTheme _resolveRoute(
   borderRadius: ambient.borderRadius,
   borderClipper: ambient.borderClipper,
   shadow: ambient.shadow,
+  boxShadow: ambient.boxShadow,
+  border: ambient.border,
   width: ambient.width,
   accessibilityWidth: ambient.accessibilityWidth,
+  minWidth: ambient.minWidth,
+  maxWidth: ambient.maxWidth,
+  maxHeight: ambient.maxHeight,
+  constraints: ambient.constraints,
+  padding: ambient.padding,
+  margin: ambient.margin,
+  clipBehavior: ambient.clipBehavior,
+  containerBuilder: ambient.containerBuilder,
+  barrierColor: ambient.barrierColor,
+  barrierDismissible: ambient.barrierDismissible,
+  barrierLabel: ambient.barrierLabel,
+  backdropBlurSigma: ambient.backdropBlurSigma,
+  showBackdropFilter: ambient.showBackdropFilter,
+  openDuration: ambient.openDuration,
+  closeDuration: ambient.closeDuration,
+  sizeChangeDuration: ambient.sizeChangeDuration,
+  openCurve: ambient.openCurve,
+  closeCurve: ambient.closeCurve,
+  menuScreenPadding: ambient.menuScreenPadding,
 );
 
 PullDownMenuItemTheme _resolveItem(
   PullDownMenuItemTheme defaults,
   PullDownMenuItemTheme ambient,
-) => defaults.copyWith(
-  destructiveColor: ambient.destructiveColor,
-  checkmark: ambient.checkmark,
-  textStyle: defaults.textStyle!.merge(ambient.textStyle),
-  subtitleStyle: defaults.subtitleStyle!.merge(ambient.subtitleStyle),
-  iconActionTextStyle: defaults.iconActionTextStyle!.merge(
-    ambient.iconActionTextStyle,
-  ),
-  onHoverBackgroundColor: ambient.onHoverBackgroundColor,
-  onPressedBackgroundColor: ambient.onPressedBackgroundColor,
-  onHoverTextColor: ambient.onHoverTextColor,
-);
+) {
+  final TextStyle textStyle = defaults.textStyle!.merge(ambient.textStyle);
+  final TextStyle subtitleStyle =
+      defaults.subtitleStyle!.merge(ambient.subtitleStyle);
+  final TextStyle trailingTextStyle =
+      defaults.trailingTextStyle!.merge(ambient.trailingTextStyle);
+
+  return defaults.copyWith(
+    destructiveColor: ambient.destructiveColor,
+    checkmark: ambient.checkmark,
+    textStyle: textStyle.copyWith(
+      color: ambient.titleColor ?? textStyle.color,
+    ),
+    subtitleStyle: subtitleStyle.copyWith(
+      color: ambient.subtitleColor ?? subtitleStyle.color,
+    ),
+    iconActionTextStyle: defaults.iconActionTextStyle!.merge(
+      ambient.iconActionTextStyle,
+    ),
+    trailingTextStyle: trailingTextStyle.copyWith(
+      color: ambient.trailingColor ?? trailingTextStyle.color,
+    ),
+    trailingColor: ambient.trailingColor,
+    backgroundColor: ambient.backgroundColor,
+    onHoverBackgroundColor: ambient.onHoverBackgroundColor,
+    onPressedBackgroundColor: ambient.onPressedBackgroundColor,
+    onHoverTextColor: ambient.onHoverTextColor,
+    onPressedTextColor: ambient.onPressedTextColor,
+    titleColor: ambient.titleColor,
+    subtitleColor: ambient.subtitleColor,
+    iconColor: ambient.iconColor,
+    iconBackgroundColor: ambient.iconBackgroundColor,
+    iconBorderRadius: ambient.iconBorderRadius,
+    iconPadding: ambient.iconPadding,
+    iconSize: ambient.iconSize,
+    iconAlignment: ambient.iconAlignment,
+    disabledOpacity: ambient.disabledOpacity,
+    itemBorderRadius: ambient.itemBorderRadius,
+    border: ambient.border,
+    margin: ambient.margin,
+    padding: ambient.padding,
+    headerPadding: ambient.headerPadding,
+    actionsRowPadding: ambient.actionsRowPadding,
+    titleSubtitleGap: ambient.titleSubtitleGap,
+    iconSpacing: ambient.iconSpacing,
+    leadingWidth: ambient.leadingWidth,
+    leadingSpacing: ambient.leadingSpacing,
+    checkmarkSize: ambient.checkmarkSize,
+    showLeading: ambient.showLeading,
+    mouseCursor: ambient.mouseCursor,
+    minHeight: ambient.minHeight,
+  );
+}

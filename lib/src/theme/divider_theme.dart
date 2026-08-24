@@ -2,6 +2,8 @@
 /// @docImport '/src/items/divider.dart';
 library;
 
+import 'dart:ui' as ui;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 
@@ -26,6 +28,14 @@ final class PullDownMenuDividerTheme with Diagnosticable {
   const PullDownMenuDividerTheme({
     this.dividerColor,
     this.largeDividerColor,
+    this.color,
+    this.separatorThickness,
+    this.dividerThickness,
+    this.separatorHeight,
+    this.dividerHeight,
+    this.indent,
+    this.endIndent,
+    this.margin,
   });
 
   /// Creates default set of properties used to configure
@@ -47,14 +57,62 @@ final class PullDownMenuDividerTheme with Diagnosticable {
   /// The color of the [PullDownMenuDivider].
   final Color? largeDividerColor;
 
+  /// General color override for dividers.
+  final Color? color;
+
+  /// Thickness of [PullDownMenuSeparator] lines.
+  ///
+  /// Defaults to `0.5`.
+  final double? separatorThickness;
+
+  /// Thickness (height) of [PullDownMenuDivider].
+  ///
+  /// Defaults to `8`.
+  final double? dividerThickness;
+
+  /// Layout height of [PullDownMenuSeparator].
+  ///
+  /// Defaults to [separatorThickness].
+  final double? separatorHeight;
+
+  /// Layout height of [PullDownMenuDivider].
+  ///
+  /// Defaults to [dividerThickness].
+  final double? dividerHeight;
+
+  /// The leading spacing for [PullDownMenuDivider].
+  final double? indent;
+
+  /// The trailing spacing for [PullDownMenuDivider].
+  final double? endIndent;
+
+  /// Outer margin surrounding the divider.
+  final EdgeInsetsGeometry? margin;
+
   /// Creates a copy of this object with the given fields replaced with the
   /// new values.
   PullDownMenuDividerTheme copyWith({
     Color? dividerColor,
     Color? largeDividerColor,
+    Color? color,
+    double? separatorThickness,
+    double? dividerThickness,
+    double? separatorHeight,
+    double? dividerHeight,
+    double? indent,
+    double? endIndent,
+    EdgeInsetsGeometry? margin,
   }) => PullDownMenuDividerTheme(
     dividerColor: dividerColor ?? this.dividerColor,
     largeDividerColor: largeDividerColor ?? this.largeDividerColor,
+    color: color ?? this.color,
+    separatorThickness: separatorThickness ?? this.separatorThickness,
+    dividerThickness: dividerThickness ?? this.dividerThickness,
+    separatorHeight: separatorHeight ?? this.separatorHeight,
+    dividerHeight: dividerHeight ?? this.dividerHeight,
+    indent: indent ?? this.indent,
+    endIndent: endIndent ?? this.endIndent,
+    margin: margin ?? this.margin,
   );
 
   /// Linearly interpolate between two themes.
@@ -74,11 +132,42 @@ final class PullDownMenuDividerTheme with Diagnosticable {
         b?.largeDividerColor,
         t,
       ),
+      color: Color.lerp(a?.color, b?.color, t),
+      separatorThickness: ui.lerpDouble(
+        a?.separatorThickness,
+        b?.separatorThickness,
+        t,
+      ),
+      dividerThickness: ui.lerpDouble(
+        a?.dividerThickness,
+        b?.dividerThickness,
+        t,
+      ),
+      separatorHeight: ui.lerpDouble(
+        a?.separatorHeight,
+        b?.separatorHeight,
+        t,
+      ),
+      dividerHeight: ui.lerpDouble(a?.dividerHeight, b?.dividerHeight, t),
+      indent: ui.lerpDouble(a?.indent, b?.indent, t),
+      endIndent: ui.lerpDouble(a?.endIndent, b?.endIndent, t),
+      margin: EdgeInsetsGeometry.lerp(a?.margin, b?.margin, t),
     );
   }
 
   @override
-  int get hashCode => Object.hash(dividerColor, largeDividerColor);
+  int get hashCode => Object.hashAll([
+    dividerColor,
+    largeDividerColor,
+    color,
+    separatorThickness,
+    dividerThickness,
+    separatorHeight,
+    dividerHeight,
+    indent,
+    endIndent,
+    margin,
+  ]);
 
   @override
   bool operator ==(Object other) {
@@ -91,7 +180,15 @@ final class PullDownMenuDividerTheme with Diagnosticable {
 
     return other is PullDownMenuDividerTheme &&
         other.dividerColor == dividerColor &&
-        other.largeDividerColor == largeDividerColor;
+        other.largeDividerColor == largeDividerColor &&
+        other.color == color &&
+        other.separatorThickness == separatorThickness &&
+        other.dividerThickness == dividerThickness &&
+        other.separatorHeight == separatorHeight &&
+        other.dividerHeight == dividerHeight &&
+        other.indent == indent &&
+        other.endIndent == endIndent &&
+        other.margin == margin;
   }
 
   @override
@@ -105,7 +202,33 @@ final class PullDownMenuDividerTheme with Diagnosticable {
           largeDividerColor,
           defaultValue: null,
         ),
-      );
+      )
+      ..add(ColorProperty('color', color, defaultValue: null))
+      ..add(
+        DoubleProperty(
+          'separatorThickness',
+          separatorThickness,
+          defaultValue: null,
+        ),
+      )
+      ..add(
+        DoubleProperty(
+          'dividerThickness',
+          dividerThickness,
+          defaultValue: null,
+        ),
+      )
+      ..add(
+        DoubleProperty(
+          'separatorHeight',
+          separatorHeight,
+          defaultValue: null,
+        ),
+      )
+      ..add(DoubleProperty('dividerHeight', dividerHeight, defaultValue: null))
+      ..add(DoubleProperty('indent', indent, defaultValue: null))
+      ..add(DoubleProperty('endIndent', endIndent, defaultValue: null))
+      ..add(DiagnosticsProperty('margin', margin, defaultValue: null));
   }
 }
 
@@ -136,4 +259,16 @@ final class _Defaults extends PullDownMenuDividerTheme {
 
   @override
   Color get largeDividerColor => kLargeDividerColor.resolveFrom(context);
+
+  @override
+  double get separatorThickness => 0.5;
+
+  @override
+  double get dividerThickness => 8;
+
+  @override
+  double get separatorHeight => separatorThickness;
+
+  @override
+  double get dividerHeight => dividerThickness;
 }

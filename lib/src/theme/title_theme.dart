@@ -2,6 +2,8 @@
 /// @docImport '/src/items/title.dart';
 library;
 
+import 'dart:ui' as ui;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 
@@ -24,6 +26,14 @@ class PullDownMenuTitleTheme with Diagnosticable {
   /// Creates the set of properties used to configure [PullDownMenuTitleTheme].
   const PullDownMenuTitleTheme({
     this.style,
+    this.color,
+    this.padding,
+    this.margin,
+    this.startPaddingWithLeading,
+    this.startPadding,
+    this.verticalPadding,
+    this.endPadding,
+    this.titleSubtitleGap,
   });
 
   /// Creates default set of properties used to configure
@@ -42,12 +52,57 @@ class PullDownMenuTitleTheme with Diagnosticable {
   /// The text style of title in the pull-down menu.
   final TextStyle? style;
 
+  /// The color of the title text.
+  ///
+  /// Merged into [style] when resolved.
+  final Color? color;
+
+  /// Padding of [PullDownMenuTitle].
+  ///
+  /// If null, [startPadding], [verticalPadding], and [endPadding] are used.
+  final EdgeInsetsDirectional? padding;
+
+  /// Margin of [PullDownMenuTitle].
+  final EdgeInsetsGeometry? margin;
+
+  /// Start padding when the menu has selectable leading items.
+  final double? startPaddingWithLeading;
+
+  /// Start padding when the menu has no leading items.
+  final double? startPadding;
+
+  /// Top and bottom padding of [PullDownMenuTitle].
+  final double? verticalPadding;
+
+  /// End padding of [PullDownMenuTitle].
+  final double? endPadding;
+
+  /// Gap between title and subtitle if subtitle is present.
+  final double? titleSubtitleGap;
+
   /// Creates a copy of this object with the given fields replaced with the
   /// new values.
   PullDownMenuTitleTheme copyWith({
     TextStyle? style,
+    Color? color,
+    EdgeInsetsDirectional? padding,
+    EdgeInsetsGeometry? margin,
+    double? startPaddingWithLeading,
+    double? startPadding,
+    double? verticalPadding,
+    double? endPadding,
+    double? titleSubtitleGap,
   }) => PullDownMenuTitleTheme(
     style: style ?? this.style,
+    color: color ?? this.color,
+    padding: padding ?? this.padding,
+    margin: margin ?? this.margin,
+    startPaddingWithLeading:
+        startPaddingWithLeading ?? this.startPaddingWithLeading,
+    startPadding: startPadding ?? this.startPadding,
+    verticalPadding: verticalPadding ?? this.verticalPadding,
+    endPadding: endPadding ?? this.endPadding,
+    titleSubtitleGap: titleSubtitleGap ?? this.titleSubtitleGap,
   );
 
   /// Linearly interpolate between two themes.
@@ -62,11 +117,37 @@ class PullDownMenuTitleTheme with Diagnosticable {
 
     return PullDownMenuTitleTheme(
       style: TextStyle.lerp(a?.style, b?.style, t),
+      color: Color.lerp(a?.color, b?.color, t),
+      padding: EdgeInsetsDirectional.lerp(a?.padding, b?.padding, t),
+      margin: EdgeInsetsGeometry.lerp(a?.margin, b?.margin, t),
+      startPaddingWithLeading: ui.lerpDouble(
+        a?.startPaddingWithLeading,
+        b?.startPaddingWithLeading,
+        t,
+      ),
+      startPadding: ui.lerpDouble(a?.startPadding, b?.startPadding, t),
+      verticalPadding: ui.lerpDouble(a?.verticalPadding, b?.verticalPadding, t),
+      endPadding: ui.lerpDouble(a?.endPadding, b?.endPadding, t),
+      titleSubtitleGap: ui.lerpDouble(
+        a?.titleSubtitleGap,
+        b?.titleSubtitleGap,
+        t,
+      ),
     );
   }
 
   @override
-  int get hashCode => Object.hashAll([style]);
+  int get hashCode => Object.hashAll([
+    style,
+    color,
+    padding,
+    margin,
+    startPaddingWithLeading,
+    startPadding,
+    verticalPadding,
+    endPadding,
+    titleSubtitleGap,
+  ]);
 
   @override
   bool operator ==(Object other) {
@@ -77,13 +158,41 @@ class PullDownMenuTitleTheme with Diagnosticable {
       return false;
     }
 
-    return other is PullDownMenuTitleTheme && other.style == style;
+    return other is PullDownMenuTitleTheme &&
+        other.style == style &&
+        other.color == color &&
+        other.padding == padding &&
+        other.margin == margin &&
+        other.startPaddingWithLeading == startPaddingWithLeading &&
+        other.startPadding == startPadding &&
+        other.verticalPadding == verticalPadding &&
+        other.endPadding == endPadding &&
+        other.titleSubtitleGap == titleSubtitleGap;
   }
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty('style', style, defaultValue: null));
+    properties
+      ..add(DiagnosticsProperty('style', style, defaultValue: null))
+      ..add(ColorProperty('color', color, defaultValue: null))
+      ..add(DiagnosticsProperty('padding', padding, defaultValue: null))
+      ..add(DiagnosticsProperty('margin', margin, defaultValue: null))
+      ..add(
+        DoubleProperty(
+          'startPaddingWithLeading',
+          startPaddingWithLeading,
+          defaultValue: null,
+        ),
+      )
+      ..add(DoubleProperty('startPadding', startPadding, defaultValue: null))
+      ..add(
+        DoubleProperty('verticalPadding', verticalPadding, defaultValue: null),
+      )
+      ..add(DoubleProperty('endPadding', endPadding, defaultValue: null))
+      ..add(
+        DoubleProperty('titleSubtitleGap', titleSubtitleGap, defaultValue: null),
+      );
   }
 }
 
@@ -121,4 +230,22 @@ class _Defaults extends PullDownMenuTitleTheme {
   TextStyle get style => kStyle.copyWith(
     color: kTitleColor.resolveFrom(context),
   );
+
+  @override
+  Color get color => kTitleColor.resolveFrom(context);
+
+  @override
+  double get startPaddingWithLeading => 9;
+
+  @override
+  double get startPadding => 16;
+
+  @override
+  double get verticalPadding => 8;
+
+  @override
+  double get endPadding => 16;
+
+  @override
+  double get titleSubtitleGap => 0;
 }

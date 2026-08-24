@@ -6,20 +6,38 @@ import 'package:flutter/material.dart';
 import 'package:meta/meta.dart';
 
 import '/src/internals/menu_config.dart';
+import '/src/theme/divider_theme.dart';
 
-// The values were taken from the Apple Design Resources iOS 18 Figma file.
-const _kSeparatorHeight = 0.5;
-const double _kDividerHeight = 8;
+// Default values were taken from the Apple Design Resources iOS 18 Figma file.
 
 /// A horizontal divider for a cupertino style pull-down menu.
 ///
-/// Divider is always 8px in height.
+/// Divider is 8px in height by default.
 @immutable
 class PullDownMenuDivider extends StatelessWidget {
   /// Creates a large horizontal divider for a pull-down menu.
   const PullDownMenuDivider({
     super.key,
     this.color,
+    this.height,
+    this.thickness,
+    this.indent,
+    this.endIndent,
+    this.margin,
+    this.dividerTheme,
+  }) : child = null;
+
+  /// Creates a custom divider with an arbitrary [child] widget.
+  const PullDownMenuDivider.custom({
+    super.key,
+    required this.child,
+    this.color,
+    this.height,
+    this.thickness,
+    this.indent,
+    this.endIndent,
+    this.margin,
+    this.dividerTheme,
   });
 
   /// The color of the divider.
@@ -28,19 +46,69 @@ class PullDownMenuDivider extends StatelessWidget {
   /// [PullDownMenuDividerTheme] is used.
   final Color? color;
 
+  /// The height of the divider.
+  ///
+  /// If null, [PullDownMenuDividerTheme.dividerHeight] is used.
+  final double? height;
+
+  /// The thickness of the divider.
+  ///
+  /// If null, [PullDownMenuDividerTheme.dividerThickness] is used.
+  final double? thickness;
+
+  /// The leading spacing for the divider.
+  ///
+  /// If null, [PullDownMenuDividerTheme.indent] is used.
+  final double? indent;
+
+  /// The trailing spacing for the divider.
+  ///
+  /// If null, [PullDownMenuDividerTheme.endIndent] is used.
+  final double? endIndent;
+
+  /// Outer margin surrounding the divider.
+  final EdgeInsetsGeometry? margin;
+
+  /// Optional custom child widget to render as the divider.
+  final Widget? child;
+
+  /// An optional per-divider theme override.
+  final PullDownMenuDividerTheme? dividerTheme;
+
   @override
-  Widget build(BuildContext context) => Divider(
-    height: _kDividerHeight,
-    thickness: _kDividerHeight,
-    color:
-        color ??
-        MenuConfig.ambientThemeOf(context).dividerTheme.largeDividerColor!,
-  );
+  Widget build(BuildContext context) {
+    final PullDownMenuDividerTheme theme =
+        dividerTheme ?? MenuConfig.ambientThemeOf(context).dividerTheme;
+
+    Widget result;
+
+    if (child != null) {
+      result = child!;
+    } else {
+      result = Divider(
+        height: height ?? theme.dividerHeight,
+        thickness: thickness ?? theme.dividerThickness,
+        indent: indent ?? theme.indent,
+        endIndent: endIndent ?? theme.endIndent,
+        color: color ?? theme.color ?? theme.largeDividerColor!,
+      );
+    }
+
+    final EdgeInsetsGeometry? effectiveMargin = margin ?? theme.margin;
+    if (effectiveMargin != null) {
+      result = Padding(
+        padding: effectiveMargin,
+        child: result,
+      );
+    }
+
+    return result;
+  }
 }
 
 /// A small divider for a cupertino style pull-down menu.
 ///
-/// Divider is always 0.5px in height.
+/// Divider is 0.5px in height by default.
 @immutable
 @internal
 class PullDownMenuSeparator extends StatelessWidget {
@@ -60,21 +128,20 @@ class PullDownMenuSeparator extends StatelessWidget {
       return items;
     }
 
-    const divider = PullDownMenuSeparator._(axis: Axis.horizontal);
+    const PullDownMenuSeparator divider = PullDownMenuSeparator._(
+      axis: Axis.horizontal,
+    );
+    final List<Widget> list = <Widget>[items.first];
 
-    final list = <Widget>[];
+    for (int i = 0; i < items.length - 1; i++) {
+      final Widget next = items[i + 1];
 
-    for (var i = 0; i < items.length - 1; i++) {
-      final Widget item = items[i];
-
-      if (item is PullDownMenuDivider || items[i + 1] is PullDownMenuDivider) {
-        list.add(item);
+      if (items[i] is PullDownMenuDivider || next is PullDownMenuDivider) {
+        list.add(next);
       } else {
-        list.addAll([item, divider]);
+        list.addAll([divider, next]);
       }
     }
-
-    list.add(items.last);
 
     return list;
   }
@@ -90,10 +157,12 @@ class PullDownMenuSeparator extends StatelessWidget {
       return [Expanded(child: items.single)];
     }
 
-    const divider = PullDownMenuSeparator._(axis: Axis.vertical);
+    const PullDownMenuSeparator divider = PullDownMenuSeparator._(
+      axis: Axis.vertical,
+    );
 
     return [
-      for (final i in items.take(items.length - 1)) ...[
+      for (final Widget i in items.take(items.length - 1)) ...[
         Expanded(child: i),
         divider,
       ],
@@ -103,18 +172,21 @@ class PullDownMenuSeparator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color color =
-        MenuConfig.ambientThemeOf(context).dividerTheme.dividerColor!;
+    final PullDownMenuDividerTheme theme =
+        MenuConfig.ambientThemeOf(context).dividerTheme;
+    final Color color = theme.color ?? theme.dividerColor!;
 
     return switch (axis) {
       Axis.horizontal => Divider(
-        height: _kSeparatorHeight,
-        thickness: _kSeparatorHeight,
+        height: theme.separatorHeight,
+        thickness: theme.separatorThickness,
+        indent: theme.indent,
+        endIndent: theme.endIndent,
         color: color,
       ),
       Axis.vertical => VerticalDivider(
-        width: _kSeparatorHeight,
-        thickness: _kSeparatorHeight,
+        width: theme.separatorHeight,
+        thickness: theme.separatorThickness,
         color: color,
       ),
     };

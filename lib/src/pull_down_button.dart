@@ -368,11 +368,19 @@ class PullDownButton extends StatefulWidget {
     Widget child,
   ) {
     final bool isOpen = state.isOpen;
+    final routeTheme = PullDownButtonTheme.ambientOf(context).routeTheme;
+    final openDuration = routeTheme.openDuration!;
+    final closeDuration = routeTheme.closeDuration!;
 
     // All of the values where eyeballed using the iOS 16 Simulator.
     return AnimatedOpacity(
       opacity: isOpen ? 0.4 : 1,
-      duration: Duration(milliseconds: isOpen ? 100 : 200),
+      duration:
+          isOpen
+              ? Duration(milliseconds: openDuration.inMilliseconds ~/ 3)
+              : Duration(
+                milliseconds: (closeDuration.inMilliseconds / 1.5).round(),
+              ),
       curve: isOpen ? Curves.fastLinearToSlowEaseIn : Curves.easeIn,
       child: child,
     );
