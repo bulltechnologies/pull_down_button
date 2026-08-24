@@ -29,6 +29,23 @@
 
     </details>
 
+-   Add `PullDownMenuItem.custom` constructor to allow arbitrary child widgets inside pull-down menu items.
+-   Add `PullDownMenuItem.builder` constructor with `PullDownMenuItemState` (`isHovered`, `isPressed`, `enabled`, `selected`, `onTap`) for building dynamic, animated, or stateful menu items.
+-   Add `PullDownMenuDivider.custom` constructor to render custom divider widgets.
+-   Add extensive personalization options to `PullDownMenuItem` and `PullDownMenuItemTheme`:
+    -   `iconAlignment` (`leading` or `trailing`), `iconBackgroundColor`, `iconBorderRadius`, `iconPadding`, and `iconSize`
+    -   `trailing` (shortcuts, badges, chevrons) and `leading` (custom leading replacements)
+    -   `backgroundColor`, `margin`, `border`, `itemBorderRadius`
+    -   `titleWidget`, `subtitleWidget`, `titleSubtitleGap`, `showLeading`, `mouseCursor`
+-   Add extensive container personalization options to `PullDownMenuRouteTheme`:
+    -   `boxShadow`, `border`, `minWidth`, `maxWidth`, `maxHeight`, `constraints`, `padding`, `margin`, `clipBehavior`
+    -   `containerBuilder` to morph, wrap, or animate the menu container widget
+    -   `barrierColor`, `barrierDismissible`, `barrierLabel`, `showBackdropFilter`
+-   Add divider customization options to `PullDownMenuDividerTheme` and `PullDownMenuDivider`:
+    -   `color`, `margin`, `indent`, `endIndent`, `dividerHeight`, `dividerThickness`, `separatorHeight`, `separatorThickness`
+-   Add title customization options to `PullDownMenuTitleTheme` and `PullDownMenuTitle`:
+    -   `titleSubtitleGap`, `margin`, `subtitle`, `leading`, `trailing`
+
 ### Removed
 
 -   **Breaking:** remove `PullDownMenuEntry`. _Now menu accepts any widget as its child._

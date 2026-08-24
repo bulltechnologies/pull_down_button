@@ -321,11 +321,7 @@ class PullDownButton extends StatefulWidget {
   /// PullDownButton(
   ///   itemBuilder: ...,
   ///   buttonBuilder: ...,
-  ///   // ignore: invalid_use_of_internal_member
-  ///   menuOffset: PullDownMenuRouteTheme.resolve(
-  ///         context,
-  ///         routeTheme: null,
-  ///       ).width!,
+  ///   menuOffset: PullDownMenuRouteTheme.resolvedWidthOf(context),
   ///   animationAlignmentOverride: Alignment.topRight,
   ///   buttonAnchor: PullDownMenuAnchor.end,
   /// )
