@@ -81,9 +81,13 @@ class MenuDecoration extends StatelessWidget {
 
     if (border != null) {
       box = DecoratedBox(
-        decoration: BoxDecoration(
-          border: border,
-          borderRadius: borderRadius,
+        decoration: ShapeDecoration(
+          shape: RoundedSuperellipseBorder(
+            borderRadius: borderRadius,
+            side: border is Border
+                ? (border! as Border).top
+                : BorderSide.none,
+          ),
         ),
         position: DecorationPosition.foreground,
         child: box,

@@ -26,5 +26,7 @@ dependencies:
   meta: ^1.17.0
 
 dev_dependencies:
+  flutter_test:
+    sdk: flutter
   yet_another_lint:
     git: https://github.com/notDmDrl/yet_another_lint.git

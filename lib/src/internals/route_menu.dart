@@ -55,8 +55,9 @@ class RoutePullDownMenu extends StatelessWidget {
         (theme.shadow != null ? [theme.shadow!] : const <BoxShadow>[]);
 
     final DecorationTween shadowTween = DecorationTween(
-      begin: BoxDecoration(
-        boxShadow: [
+      begin: ShapeDecoration(
+        shape: RoundedSuperellipseBorder(borderRadius: theme.borderRadius!),
+        shadows: [
           for (final BoxShadow s in shadows)
             BoxShadow(
               color: s.color.withValues(alpha: 0),
@@ -66,7 +67,10 @@ class RoutePullDownMenu extends StatelessWidget {
             ),
         ],
       ),
-      end: BoxDecoration(boxShadow: shadows),
+      end: ShapeDecoration(
+        shape: RoundedSuperellipseBorder(borderRadius: theme.borderRadius!),
+        shadows: shadows,
+      ),
     );
 
     final ClampedAnimation clampedAnimation = ClampedAnimation(animation);

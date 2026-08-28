@@ -102,12 +102,9 @@ class PullDownMenuRouteTheme with Diagnosticable {
 
   /// The border radius clipper of the pull-down menu.
   ///
-  /// Can be set to [ClipRSuperellipse] on newer Flutter versions past 3.32.0
-  /// with Impeller enabled.
+  /// Defaults to [ClipRSuperellipse].
   ///
   /// The *borderRadius* is passed from [PullDownMenuRouteTheme.borderRadius].
-  ///
-  /// If null, defaults to [ClipRRect].
   ///
   /// Example:
   ///
@@ -545,10 +542,10 @@ class _Defaults extends PullDownMenuRouteTheme {
         ),
       );
 
-  static ClipRRect _defaultBorderClipper(
+  static ClipRSuperellipse _defaultBorderClipper(
     BorderRadius borderRadius,
     Widget child,
-  ) => ClipRRect(
+  ) => ClipRSuperellipse(
     borderRadius: borderRadius,
     child: child,
   );

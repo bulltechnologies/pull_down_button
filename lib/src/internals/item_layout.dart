@@ -157,9 +157,11 @@ class IconBox extends StatelessWidget {
     if (backgroundColor != null || borderRadius != null || padding != null) {
       iconWidget = Container(
         padding: padding,
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: backgroundColor,
-          borderRadius: borderRadius,
+          shape: RoundedSuperellipseBorder(
+            borderRadius: borderRadius ?? BorderRadius.zero,
+          ),
         ),
         child: iconWidget,
       );

@@ -172,10 +172,14 @@ class _MenuActionButtonState extends State<MenuActionButton> {
         onTapCancel: onTapCancel,
         behavior: HitTestBehavior.opaque,
         child: DecoratedBox(
-          decoration: BoxDecoration(
+          decoration: ShapeDecoration(
             color: effectiveColor,
-            borderRadius: widget.borderRadius,
-            border: widget.border,
+            shape: RoundedSuperellipseBorder(
+              borderRadius: widget.borderRadius,
+              side: widget.border is Border
+                  ? (widget.border! as Border).top
+                  : BorderSide.none,
+            ),
           ),
           child: MenuActionButtonState(
             isHovered: _isHovered && !_isPressed,

@@ -133,8 +133,9 @@ class PullDownMenu extends StatelessWidget {
       ambientTheme: ambientOf,
       contentSizeCategory: ContentSizeCategory.of(context),
       child: DecoratedBox(
-        decoration: BoxDecoration(
-          boxShadow: shadows,
+        decoration: ShapeDecoration(
+          shape: RoundedSuperellipseBorder(borderRadius: theme.borderRadius!),
+          shadows: shadows,
         ),
         child: MenuDecoration(
           backgroundColor: theme.backgroundColor!,
