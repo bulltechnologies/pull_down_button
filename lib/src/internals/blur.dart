@@ -23,7 +23,7 @@ abstract final class BlurUtils {
   /// * Apple Design Resources Sketch and Figma [libraries](https://developer.apple.com/design/resources/)
   static const double _kBlurSigma = 30;
 
-  /// Default backdrop blur sigma used by [PullDownMenuRouteTheme].
+  /// Default backdrop blur sigma used by the pull-down menu route theme.
   static const double defaultBlurSigma = _kBlurSigma;
 
   static ImageFilter _blurFilter(double sigma) => ImageFilter.blur(
@@ -31,7 +31,10 @@ abstract final class BlurUtils {
     sigmaY: sigma,
   );
 
-  static final _composedBlurCache = <_BlurCacheKey, ImageFilter>{};
+  // Custom themes may animate sigma through many values. Keep native filter
+  // reuse bounded instead of retaining every value for the app's lifetime.
+  static const _maximumCachedFilters = 16;
+  static final _blurCache = <_BlurCacheKey, ImageFilter>{};
 
   /// Blur used by [BackdropFilter] if [BlurUtils.useBackdropFilter] is `true`.
   static ImageFilter menuBlur(
@@ -39,23 +42,33 @@ abstract final class BlurUtils {
     double sigma = _kBlurSigma,
   }) {
     // Reasoning https://github.com/flutter/flutter/pull/121829#issuecomment-1494714917.
-    if (kIsWeb) {
-      return _blurFilter(sigma);
-    }
-
-    final Brightness brightness = menuBrightnessOf(context);
+    final Brightness? brightness = kIsWeb ? null : menuBrightnessOf(context);
     final key = _BlurCacheKey(brightness: brightness, sigma: sigma);
 
-    return _composedBlurCache.putIfAbsent(
-      key,
-      () => ImageFilter.compose(
-        inner: switch (brightness) {
-          Brightness.dark => _darkSaturationMatrix,
-          Brightness.light => _lightSaturationMatrix,
-        },
-        outer: _blurFilter(sigma),
-      ),
-    );
+    // Reinsertion makes the insertion-ordered map a small least-recently-used
+    // cache, retaining frequently used light/dark defaults across custom menus.
+    final ImageFilter? cached = _blurCache.remove(key);
+    if (cached != null) {
+      _blurCache[key] = cached;
+      return cached;
+    }
+
+    final ImageFilter filter =
+        brightness == null
+            ? _blurFilter(sigma)
+            : ImageFilter.compose(
+              inner: switch (brightness) {
+                Brightness.dark => _darkSaturationMatrix,
+                Brightness.light => _lightSaturationMatrix,
+              },
+              outer: _blurFilter(sigma),
+            );
+
+    if (_blurCache.length == _maximumCachedFilters) {
+      _blurCache.remove(_blurCache.keys.first);
+    }
+    _blurCache[key] = filter;
+    return filter;
   }
 }
 
@@ -66,7 +79,7 @@ class _BlurCacheKey {
     required this.sigma,
   });
 
-  final Brightness brightness;
+  final Brightness? brightness;
   final double sigma;
 
   @override

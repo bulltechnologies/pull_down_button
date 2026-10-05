@@ -71,11 +71,14 @@ class PullDownButtonTheme extends ThemeExtension<PullDownButtonTheme>
     final itemDefaults = PullDownMenuItemTheme.defaults(context);
 
     if (ambientTheme == null) {
+      // Default themes resolve colors and text styles through context-backed
+      // getters. Resolve them once so descendants share the resulting styles,
+      // and previous configurations retain their values on brightness changes.
       return PullDownButtonTheme(
-        routeTheme: routeDefaults,
-        dividerTheme: dividerDefaults,
-        itemTheme: itemDefaults,
-        titleTheme: titleDefaults,
+        routeTheme: routeDefaults.copyWith(),
+        dividerTheme: dividerDefaults.copyWith(),
+        itemTheme: itemDefaults.copyWith(),
+        titleTheme: titleDefaults.copyWith(),
       );
     }
 
@@ -293,10 +296,12 @@ PullDownMenuItemTheme _resolveItem(
   PullDownMenuItemTheme ambient,
 ) {
   final TextStyle textStyle = defaults.textStyle!.merge(ambient.textStyle);
-  final TextStyle subtitleStyle =
-      defaults.subtitleStyle!.merge(ambient.subtitleStyle);
-  final TextStyle trailingTextStyle =
-      defaults.trailingTextStyle!.merge(ambient.trailingTextStyle);
+  final TextStyle subtitleStyle = defaults.subtitleStyle!.merge(
+    ambient.subtitleStyle,
+  );
+  final TextStyle trailingTextStyle = defaults.trailingTextStyle!.merge(
+    ambient.trailingTextStyle,
+  );
 
   return defaults.copyWith(
     destructiveColor: ambient.destructiveColor,

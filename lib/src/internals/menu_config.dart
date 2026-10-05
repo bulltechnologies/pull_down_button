@@ -81,12 +81,15 @@ class MenuConfig extends InheritedModel<_MenuConfigAspect> {
   ) {
     for (final dependency in dependencies) {
       if (dependency is _MenuConfigAspect) {
-        return switch (dependency) {
+        final bool changed = switch (dependency) {
           _MenuConfigAspect.hasLeading => hasLeading != oldWidget.hasLeading,
           _MenuConfigAspect.theme => ambientTheme != oldWidget.ambientTheme,
           _MenuConfigAspect.contentSize =>
             contentSizeCategory != oldWidget.contentSizeCategory,
         };
+        if (changed) {
+          return true;
+        }
       }
     }
 

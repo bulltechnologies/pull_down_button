@@ -108,9 +108,7 @@ class PullDownMenuRoute<VoidCallback> extends PopupRoute<VoidCallback> {
       PullDownMenuItemsOrder.downwards => items,
       PullDownMenuItemsOrder.upwards => items.reversed.toList(growable: false),
       PullDownMenuItemsOrder.automatic =>
-        alignment.y == -1
-            ? items
-            : items.reversed.toList(growable: false),
+        alignment.y == -1 ? items : items.reversed.toList(growable: false),
     };
 
     return MenuConfig(
@@ -133,37 +131,7 @@ class PullDownMenuRoute<VoidCallback> extends PopupRoute<VoidCallback> {
     Animation<double> animation,
     Animation<double> secondaryAnimation,
     Widget child,
-  ) {
-    final MediaQueryData mediaQuery = MediaQuery.of(context);
-
-    final Set<Rect> avoidBounds =
-        DisplayFeatureSubScreen.avoidBounds(mediaQuery).toSet();
-
-    final double screenPadding =
-        routeTheme?.menuScreenPadding ??
-        PullDownButtonTheme.ambientOf(context).routeTheme.menuScreenPadding!;
-
-    return SwipeRegion(
-      child: MediaQuery.removePadding(
-        context: context,
-        removeTop: true,
-        removeBottom: true,
-        removeLeft: true,
-        removeRight: true,
-        child: CustomSingleChildLayout(
-          delegate: _PopupMenuRouteLayout(
-            buttonRect: buttonRect,
-            padding: mediaQuery.padding,
-            avoidBounds: avoidBounds,
-            menuPosition: menuPosition,
-            menuOffset: menuOffset,
-            screenPadding: screenPadding,
-          ),
-          child: capturedThemes.wrap(child),
-        ),
-      ),
-    );
-  }
+  ) => _MenuRouteLayout(route: this, child: child);
 
   /// Attempt to predict an animation alignment for [RoutePullDownMenu] using
   /// a button's position.
@@ -193,6 +161,91 @@ class PullDownMenuRoute<VoidCallback> extends PopupRoute<VoidCallback> {
       _MenuHorizontalPosition.center => Alignment.topCenter,
     };
   }
+}
+
+/// Retains static route wrappers while updating Flutter's transition child.
+///
+/// Keeping the wrappers outside the framework's page repaint boundary retains
+/// the original compositing coordinates, including scale-overshoot edge pixels.
+class _MenuRouteLayout extends StatefulWidget {
+  const _MenuRouteLayout({required this.route, required this.child});
+
+  final PullDownMenuRoute<dynamic> route;
+  final Widget child;
+
+  @override
+  State<_MenuRouteLayout> createState() => _MenuRouteLayoutState();
+}
+
+class _MenuRouteLayoutState extends State<_MenuRouteLayout> {
+  late final ValueNotifier<Widget> _child;
+  late Widget _layout;
+
+  @override
+  void initState() {
+    super.initState();
+    _child = ValueNotifier(widget.child);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateLayout();
+  }
+
+  @override
+  void didUpdateWidget(_MenuRouteLayout oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _child.value = widget.child;
+    if (widget.route != oldWidget.route) {
+      _updateLayout();
+    }
+  }
+
+  void _updateLayout() {
+    final PullDownMenuRoute<dynamic> route = widget.route;
+    final MediaQueryData mediaQuery = MediaQuery.of(context);
+    final Set<Rect> avoidBounds =
+        DisplayFeatureSubScreen.avoidBounds(mediaQuery).toSet();
+    final double screenPadding =
+        route.routeTheme?.menuScreenPadding ??
+        PullDownButtonTheme.ambientOf(context).routeTheme.menuScreenPadding!;
+
+    _layout = SwipeRegion(
+      child: MediaQuery.removePadding(
+        context: context,
+        removeTop: true,
+        removeBottom: true,
+        removeLeft: true,
+        removeRight: true,
+        child: CustomSingleChildLayout(
+          delegate: _PopupMenuRouteLayout(
+            buttonRect: route.buttonRect,
+            padding: mediaQuery.padding,
+            avoidBounds: avoidBounds,
+            menuPosition: route.menuPosition,
+            menuOffset: route.menuOffset,
+            screenPadding: screenPadding,
+          ),
+          child: route.capturedThemes.wrap(
+            ValueListenableBuilder<Widget>(
+              valueListenable: _child,
+              builder: (context, child, _) => child,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _child.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => _layout;
 }
 
 /// A predicted menu's horizontal position.

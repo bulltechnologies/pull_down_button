@@ -58,14 +58,16 @@ class _PopupMenuRouteLayout extends SingleChildLayoutDelegate {
         buttonRect.left + buttonRect.width / 2 - childWidth / 2,
     };
 
-    final Offset originCenter = buttonRect.center;
     final Rect rect = Offset.zero & size;
-    final Iterable<Rect> subScreens =
-        DisplayFeatureSubScreen.subScreensInBounds(rect, avoidBounds);
-    final Rect subScreen = _PositionUtils.closestScreen(
-      subScreens,
-      originCenter,
-    );
+    // Most screens have no hinge or other obstructing display feature. Avoid
+    // creating and searching a sub-screen list on each size-animation layout.
+    final Rect subScreen =
+        avoidBounds.isEmpty
+            ? rect
+            : _PositionUtils.closestScreen(
+              DisplayFeatureSubScreen.subScreensInBounds(rect, avoidBounds),
+              buttonRect.center,
+            );
 
     final double dx = _PositionUtils.fitX(
       x,
@@ -91,6 +93,7 @@ class _PopupMenuRouteLayout extends SingleChildLayoutDelegate {
       !setEquals(avoidBounds, oldDelegate.avoidBounds) ||
       buttonRect != oldDelegate.buttonRect ||
       menuPosition != oldDelegate.menuPosition ||
+      menuOffset != oldDelegate.menuOffset ||
       screenPadding != oldDelegate.screenPadding;
 }
 
@@ -101,11 +104,19 @@ abstract class _PositionUtils {
 
   /// Returns closest screen for specific [point].
   static Rect closestScreen(Iterable<Rect> screens, Offset point) {
-    Rect closest = screens.first;
-    for (final screen in screens) {
-      if ((screen.center - point).distance <
-          (closest.center - point).distance) {
+    final Iterator<Rect> iterator = screens.iterator;
+    if (!iterator.moveNext()) {
+      throw StateError('No element');
+    }
+
+    Rect closest = iterator.current;
+    double closestDistance = (closest.center - point).distanceSquared;
+    while (iterator.moveNext()) {
+      final Rect screen = iterator.current;
+      final double distance = (screen.center - point).distanceSquared;
+      if (distance < closestDistance) {
         closest = screen;
+        closestDistance = distance;
       }
     }
 

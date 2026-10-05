@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'continuous_swipe.dart';
-import 'extensions.dart';
 
 /// Default menu gesture detector for applying on-pressed or on-hover colors,
 /// and providing builder method that exposes the `isHovered` and `isPressed`
@@ -62,22 +61,45 @@ class MenuActionButton extends StatefulWidget {
 }
 
 class _MenuActionButtonState extends State<MenuActionButton> {
-  bool _isPressed = false;
-  bool _isHovered = false;
+  var _isPressed = false;
+  var _isHovered = false;
+  ValueListenable<SwipeState>? _swipeNotifier;
 
-  late final bool enabled = widget.onTap != null;
-
-  Offset get _currentPosition =>
-      context.currentRenderBox.localToGlobal(Offset.zero);
-
-  Size get _currentSize => context.currentRenderBox.size;
+  bool get enabled => widget.onTap != null;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    final SwipeState? swipeState = SwipeState.maybeOf(context);
+    final ValueListenable<SwipeState>? swipeNotifier = SwipeState.notifierOf(
+      context,
+    );
 
+    if (_swipeNotifier != swipeNotifier) {
+      _swipeNotifier?.removeListener(_onSwipeChanged);
+      _swipeNotifier = swipeNotifier;
+      _swipeNotifier?.addListener(_onSwipeChanged);
+      _onSwipeChanged();
+    }
+  }
+
+  @override
+  void didUpdateWidget(MenuActionButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!enabled) {
+      _isPressed = false;
+      _isHovered = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _swipeNotifier?.removeListener(_onSwipeChanged);
+    super.dispose();
+  }
+
+  void _onSwipeChanged() {
+    final SwipeState? swipeState = _swipeNotifier?.value;
     if (swipeState != null) {
       swipeStateListener(swipeState);
     }
@@ -85,9 +107,13 @@ class _MenuActionButtonState extends State<MenuActionButton> {
 
   void swipeStateListener(SwipeState state) {
     if (state is SwipeInProcessState && enabled) {
+      final RenderObject? renderObject = context.findRenderObject();
+      if (renderObject is! RenderBox || !renderObject.hasSize) {
+        return;
+      }
       final bool isWithinMenuItem = state.isWithinMenuItem(
-        itemPosition: _currentPosition,
-        itemSize: _currentSize,
+        itemPosition: renderObject.localToGlobal(Offset.zero),
+        itemSize: renderObject.size,
       );
 
       if (_isPressed != isWithinMenuItem) {
@@ -111,7 +137,7 @@ class _MenuActionButtonState extends State<MenuActionButton> {
 
     widget.onTap!();
 
-    if (mounted) {
+    if (mounted && (_isPressed || _isHovered)) {
       setState(() {
         _isPressed = false;
         _isHovered = false;
@@ -151,14 +177,16 @@ class _MenuActionButtonState extends State<MenuActionButton> {
 
   @override
   Widget build(BuildContext context) {
-    final MouseCursor effectiveCursor = widget.mouseCursor ??
+    final MouseCursor effectiveCursor =
+        widget.mouseCursor ??
         (enabled && kIsWeb ? SystemMouseCursors.click : MouseCursor.defer);
 
-    final Color? effectiveColor = _isPressed
-        ? widget.pressedColor
-        : _isHovered
-        ? widget.hoverColor
-        : widget.backgroundColor;
+    final Color? effectiveColor =
+        _isPressed
+            ? widget.pressedColor
+            : _isHovered
+            ? widget.hoverColor
+            : widget.backgroundColor;
 
     Widget result = MouseRegion(
       cursor: effectiveCursor,
@@ -176,9 +204,10 @@ class _MenuActionButtonState extends State<MenuActionButton> {
             color: effectiveColor,
             shape: RoundedSuperellipseBorder(
               borderRadius: widget.borderRadius,
-              side: widget.border is Border
-                  ? (widget.border! as Border).top
-                  : BorderSide.none,
+              side:
+                  widget.border is Border
+                      ? (widget.border! as Border).top
+                      : BorderSide.none,
             ),
           ),
           child: MenuActionButtonState(

@@ -1,3 +1,28 @@
+## 1.0.0-beta.1
+
+Released 2026-10-05. Preserve menu customization, visuals, and animations while
+reducing repeated build, theme-resolution, and layout work.
+
+### Performance
+
+- Limit swipe-driven action rebuilds to actual highlight changes while preserving
+  frame-coalesced selection and haptic behavior.
+- Cache static route wrappers without changing animation compositing or captured
+  theme placement.
+- Resolve default theme colors and text styles once per configuration.
+- Reuse one text-scale resolution per icon and simplify popup positioning work.
+- Bound blur-filter caching and reuse filters on web as well as native platforms.
+
+### Fixed
+
+- Honor enabled changes on mounted menu actions.
+- Notify menu children when any registered configuration setting changes,
+  including default colors after a brightness change.
+- Relayout when the menu positioning delegate's offset changes.
+
+See [PERFORMANCE.md](PERFORMANCE.md) for measured results, compatibility checks,
+and remaining profiling limits.
+
 ## 1.0.0-beta.0
 
 ##### 2025-xx-xx - Match guidelines from the Apple Design Resources Figma file for iOS 18

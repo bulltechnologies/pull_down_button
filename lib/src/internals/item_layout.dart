@@ -37,8 +37,7 @@ final class AnimatedMenuContainer extends StatelessWidget {
     margin: margin,
     decoration: decoration,
     clipBehavior: clipBehavior,
-    duration:
-        MenuConfig.ambientThemeOf(context).routeTheme.sizeChangeDuration!,
+    duration: MenuConfig.ambientThemeOf(context).routeTheme.sizeChangeDuration!,
     curve: AnimationUtils.kOnSizeChangeCurve,
     child: child,
   );
@@ -142,9 +141,11 @@ class IconBox extends StatelessWidget {
     final double resolvedWidth = size ?? _config.width;
     final double resolvedHeight = size ?? _config.height;
 
-    Widget iconWidget = _TextScaledSizedBox(
-      height: resolvedHeight,
-      width: resolvedWidth,
+    // Resolve box and icon dimensions from the same inherited text scale.
+    // A second text-scaled widget would repeat the lookup for every icon.
+    Widget iconWidget = SizedBox(
+      height: resolvedHeight * textScaleFactor,
+      width: resolvedWidth * textScaleFactor,
       child: IconTheme.merge(
         data: IconThemeData(
           color: color,
@@ -210,9 +211,9 @@ class IconActionBox extends StatelessWidget {
         (size != null ? size! * (_kIconSize / _kSize) : _kIconSize) *
         textScaleFactor;
 
-    return _TextScaledSizedBox(
-      height: boxSize,
-      width: boxSize,
+    return SizedBox(
+      height: boxSize * textScaleFactor,
+      width: boxSize * textScaleFactor,
       child: IconTheme.merge(
         data: IconThemeData(
           color: color,
